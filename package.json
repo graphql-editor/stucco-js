@@ -1,11 +1,11 @@
 {
   "name": "stucco-js",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "bin": {
     "stucco-js": "lib/server/run.js",
-    "stucco-dev": "lib/stucco/run.js"
+    "stucco": "lib/stucco/run.js"
   },
   "scripts": {
     "test": "jest",
