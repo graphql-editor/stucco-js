@@ -42,3 +42,7 @@ export function runPluginWith(server: IStoppableServer) {
 export function run(opts?: IRunOptions) {
   return runPluginWith(new Server())(opts);
 }
+
+if (require.main === module) {
+  run();
+}

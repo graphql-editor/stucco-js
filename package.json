@@ -5,7 +5,7 @@
   "types": "./lib/index.d.ts",
   "bin": {
     "stucco-js": "lib/server/run.js",
-    "stucco-dev": "lib/stucco/run.js"
+    "stucco": "lib/stucco/run.js"
   },
   "scripts": {
     "test": "jest",
