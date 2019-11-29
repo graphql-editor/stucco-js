@@ -31,7 +31,7 @@ jobs:
         restore-keys: |
           ${{ matrix.platform }}-${{ matrix.node }}-node-
     - name: install deps
-      run: npm ci
+      run: npm install
     - name: run lint
       run: npm run lint
     - name: run tests

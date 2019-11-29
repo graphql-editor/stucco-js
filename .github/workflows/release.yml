@@ -26,7 +26,7 @@ jobs:
         restore-keys: |
           ${{ matrix.platform }}-${{ matrix.node }}-node-
     - name: install deps
-      run: npm ci
+      run: npm install
     - name: run lint
       run: npm run lint
     - name: run tests
@@ -34,10 +34,12 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    steps:
     - name: setup node
       uses: actions/setup-node@v1
       with:
-        node-version: 8
+        node-version: 12
+        registry-url: 'https://registry.npmjs.org'
     - name: checkout
       uses: actions/checkout@v1
     - name: cache deps
@@ -48,8 +50,10 @@ jobs:
         restore-keys: |
           ubuntu-latest-8-node-
     - name: install deps
-      run: npm ci
+      run: npm install
     - name: run build
       run: npm run build
     - name: run publish
-      run: npm run publish
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
