@@ -1,0 +1,39 @@
+{
+  "name": "stucco-js",
+  "version": "0.1.1",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "bin": {
+    "stucco-js": "lib/server/run.js",
+    "stucco-dev": "lib/stucco/run.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "lint": "tslint --project . && tslint tests/**/*.ts",
+    "generate-proto": "protoc --js_out=import_style=commonjs,binary:./src --grpc_out=./src --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin ./proto/driver.proto && protoc --plugin=\"protoc-gen-ts=./node_modules/.bin/protoc-gen-ts\" --ts_out=\"./src\" ./proto/driver.proto",
+    "bump-stucco": "node -e 'const fetch=require(\"node-fetch\"); const fs=require(\"fs\"); fetch(\"https://stucco-release.fra1.cdn.digitaloceanspaces.com/latest/version\").then(r => r.text()).then(b => fs.writeFileSync(\"src/stucco/version.ts\", `export const version = \"${b.trim()}\"\n`))'",
+    "build": "gulp"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bin-wrapper": "^4.1.0",
+    "google-protobuf": "^3.10.0",
+    "grpc": "^1.24.2",
+    "grpc-ts-health-check": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/google-protobuf": "^3.7.2",
+    "@types/jest": "^24.0.23",
+    "@types/node": "^12.6.2",
+    "@types/node-fetch": "^2.5.2",
+    "grpc-tools": "^1.8.0",
+    "grpc_tools_node_protoc_ts": "^2.5.8",
+    "gulp": "^4.0.2",
+    "gulp-typescript": "^5.0.1",
+    "jest": "^24.9.0",
+    "node-fetch": "^2.6.0",
+    "ts-jest": "^24.2.0",
+    "tslint": "^5.20.1",
+    "typescript": "^3.5.3"
+  }
+}

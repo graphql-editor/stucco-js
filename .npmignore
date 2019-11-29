@@ -1,0 +1,11 @@
+node_modules
+src
+tsconfig.json
+gulpfile.js
+build
+/proto
+.github
+/tests
+/coverage
+jest.config.js
+tslint.json

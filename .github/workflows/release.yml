@@ -1,0 +1,55 @@
+on:
+  push:
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+name: stucco-js release
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    strategy:
+      matrix:
+        node: [8, 10, 12]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - name: setup node
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - name: checkout
+      uses: actions/checkout@v1
+    - name: cache deps
+      uses: actions/cache@v1
+      with:
+        path: ~/node_modules
+        key: ${{ matrix.platform }}-${{ matrix.node }}-node-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ matrix.platform }}-${{ matrix.node }}-node-
+    - name: install deps
+      run: npm ci
+    - name: run lint
+      run: npm run lint
+    - name: run tests
+      run: npm run test
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    - name: setup node
+      uses: actions/setup-node@v1
+      with:
+        node-version: 8
+    - name: checkout
+      uses: actions/checkout@v1
+    - name: cache deps
+      uses: actions/cache@v1
+      with:
+        path: ~/node_modules
+        key: ubuntu-latest-8-node-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ubuntu-latest-8-node-
+    - name: install deps
+      run: npm ci
+    - name: run build
+      run: npm run build
+    - name: run publish
+      run: npm run publish
