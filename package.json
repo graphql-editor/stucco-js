@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "jest",
-    "lint": "tslint --project . && tslint tests/**/*.ts",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
     "generate-proto": "protoc --js_out=import_style=commonjs,binary:./src --grpc_out=./src --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin ./proto/driver.proto && protoc --plugin=\"protoc-gen-ts=./node_modules/.bin/protoc-gen-ts\" --ts_out=\"./src\" ./proto/driver.proto",
     "bump-stucco": "node -e 'const fetch=require(\"node-fetch\"); const fs=require(\"fs\"); fetch(\"https://stucco-release.fra1.cdn.digitaloceanspaces.com/latest/version\").then(r => r.text()).then(b => fs.writeFileSync(\"src/stucco/version.ts\", `export const version = \"${b.trim()}\"\n`))'",
     "build": "gulp"
@@ -26,14 +26,22 @@
     "@types/jest": "^24.0.23",
     "@types/node": "^12.6.2",
     "@types/node-fetch": "^2.5.2",
+    "@typescript-eslint/eslint-plugin": "^2.9.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^2.9.0",
+    "@typescript-eslint/parser": "^2.9.0",
+    "eslint": "^6.7.2",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prefer-arrow": "^1.1.6",
+    "eslint-plugin-prettier": "^3.1.1",
     "grpc-tools": "^1.8.0",
     "grpc_tools_node_protoc_ts": "^2.5.8",
     "gulp": "^4.0.2",
     "gulp-typescript": "^5.0.1",
     "jest": "^24.9.0",
     "node-fetch": "^2.6.0",
+    "prettier": "^1.19.1",
     "ts-jest": "^24.2.0",
-    "tslint": "^5.20.1",
     "typescript": "^3.5.3"
   }
 }

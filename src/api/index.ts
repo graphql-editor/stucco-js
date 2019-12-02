@@ -1,168 +1,177 @@
-export interface INamedTypeRef {
+export interface NamedTypeRef {
   name: string;
 }
 
-export interface INonNullTypeRef {
+export interface NonNullTypeRef {
   nonNull: TypeRef;
 }
 
-export interface IListTypeRef {
+export interface ListTypeRef {
   list: TypeRef;
 }
 
-export type TypeRef = INamedTypeRef | INonNullTypeRef | IListTypeRef | undefined;
+export type TypeRef = NamedTypeRef | NonNullTypeRef | ListTypeRef | undefined;
 
-export function isNamedTypeRef(tp: TypeRef): tp is INamedTypeRef {
-  return typeof tp !== "undefined" && "name" in tp;
-}
+export const isNamedTypeRef = (tp: TypeRef): tp is NamedTypeRef => typeof tp !== 'undefined' && 'name' in tp;
 
-export function isNonNullTypeRef(tp: TypeRef): tp is INonNullTypeRef {
-  return typeof tp !== "undefined" && "nonNull" in tp;
-}
+export const isNonNullTypeRef = (tp: TypeRef): tp is NonNullTypeRef => typeof tp !== 'undefined' && 'nonNull' in tp;
 
-export function isListTypeRef(tp: TypeRef): tp is IListTypeRef {
-  return typeof tp !== "undefined" && "list" in tp;
-}
+export const isListTypeRef = (tp: TypeRef): tp is ListTypeRef => typeof tp !== 'undefined' && 'list' in tp;
 
-export interface IResponsePath {
-  prev?: IResponsePath;
+export interface ResponsePath {
+  prev?: ResponsePath;
   key: string;
 }
 
-export interface IDirective {
+export interface Directive {
   name: string;
-  arguments?: Record<string, any>;
+  arguments?: Record<string, unknown>;
 }
 
-export interface IDirectives extends Array<IDirective> { }
+export type Directives = Directive[];
 
-export interface IVariable {
+export interface Variable {
   name: string;
 }
 
-export interface IVariableDefinition {
-  variable: IVariable;
-  defaultValue?: any;
+export interface VariableDefinition {
+  variable: Variable;
+  defaultValue?: unknown;
 }
 
-export interface IVariableDefinitions extends Array<IVariableDefinition> { }
+export type VariableDefinitions = VariableDefinition[];
 
-export interface IFieldSelection {
+export interface FieldSelection {
   name: string;
-  arguments?: Record<string, any>;
-  directives?: IDirectives;
-  selectionSet?: ISelections;
+  arguments?: Record<string, unknown>;
+  directives?: Directives;
+  selectionSet?: Selections;
 }
 
-export interface IFragmentDefitnion {
+export interface FragmentDefitnion {
   typeCondition: TypeRef;
-  directives?: IDirectives;
-  variableDefinitions?: IVariableDefinitions;
-  selectionSet: ISelections;
+  directives?: Directives;
+  variableDefinitions?: VariableDefinitions;
+  selectionSet: Selections;
 }
 
-export interface IFragmentSelection {
-  definition: IFragmentDefitnion;
+export interface FragmentSelection {
+  definition: FragmentDefitnion;
 }
 
-export type Selection = IFieldSelection | IFragmentSelection;
+export type Selection = FieldSelection | FragmentSelection;
 
-export interface ISelections extends Array<Selection> { }
+export type Selections = Selection[];
 
-export interface IOperationDefinition {
+export interface OperationDefinition {
   operation: string;
   name?: string;
-  variableDefinitions?: IVariableDefinitions;
-  directives?: IDirectives;
-  selectionSet?: ISelections;
+  variableDefinitions?: VariableDefinitions;
+  directives?: Directives;
+  selectionSet?: Selections;
 }
 
-export interface IHttpRequest {
+export interface HttpRequest {
   headers?: Record<string, string[]>;
 }
 
-export type Protocol = IHttpRequest;
+export type Protocol = HttpRequest;
 
-export interface IFieldResolveInfo {
+export interface FieldResolveInfo {
   fieldName: string;
-  path?: IResponsePath;
+  path?: ResponsePath;
   returnType?: TypeRef;
   parentType?: TypeRef;
-  operation?: IOperationDefinition;
-  variableValues?: Record<string, any>;
+  operation?: OperationDefinition;
+  variableValues?: Record<string, unknown>;
 }
 
-export interface IFieldResolveInput {
-  source?: any;
-  arguments?: Record<string, any>;
-  info: IFieldResolveInfo;
+export interface FieldResolveInput {
+  source?: unknown;
+  arguments?: Record<string, unknown>;
+  info: FieldResolveInfo;
   protocol?: Protocol;
-  environment?: any;
+  environment?: unknown;
 }
 
-export interface IFieldResolveOutput {
-  response?: any;
-  error?: Error;
-}
+export type FieldResolveOutput =
+  | {
+      response?: unknown | (() => unknown);
+      error?: Error;
+    }
+  | (() => unknown)
+  | unknown;
 
-export interface IInterfaceResolveTypeInfo {
+export interface InterfaceResolveTypeInfo {
   fieldName: string;
-  path?: IResponsePath;
+  path?: ResponsePath;
   returnType?: TypeRef;
   parentType?: TypeRef;
-  operation?: IOperationDefinition;
-  variableValues?: Record<string, any>;
+  operation?: OperationDefinition;
+  variableValues?: Record<string, unknown>;
 }
 
-export interface IInterfaceResolveTypeInput {
-  value?: any;
-  info: IInterfaceResolveTypeInfo;
+export interface InterfaceResolveTypeInput {
+  value?: unknown;
+  info: InterfaceResolveTypeInfo;
 }
 
-export interface IInterfaceResolveTypeOutput {
-  type?: string;
-  error?: Error;
+export type InterfaceResolveTypeOutput =
+  | {
+      type?: string | (() => string);
+      error?: Error;
+    }
+  | (() => string)
+  | string;
+
+export interface ScalarParseInput {
+  value: unknown;
 }
 
-export interface IScalarParseInput {
-  value: any;
+export type ScalarParseOutput =
+  | {
+      response?: unknown | (() => unknown);
+      error?: Error;
+    }
+  | (() => unknown)
+  | unknown;
+
+export interface ScalarSerializeInput {
+  value: unknown;
 }
 
-export interface IScalarParseOutput {
-  response?: any;
-  error?: Error;
-}
+export type ScalarSerializeOutput =
+  | {
+      response?: unknown | (() => unknown);
+      error?: Error;
+    }
+  | (() => unknown)
+  | unknown;
 
-export interface IScalarSerializeInput {
-  value: any;
-}
-
-export interface IScalarSerializeOutput {
-  response?: any;
-  error?: Error;
-}
-
-export interface IUnionResolveTypeInfo {
+export interface UnionResolveTypeInfo {
   fieldName: string;
-  path?: IResponsePath;
+  path?: ResponsePath;
   returnType?: TypeRef;
   parentType?: TypeRef;
-  operation?: IOperationDefinition;
-  variableValues?: Record<string, any>;
+  operation?: OperationDefinition;
+  variableValues?: Record<string, unknown>;
 }
 
-export interface IUnionResolveTypeInput {
-  value?: any;
-  info: IUnionResolveTypeInfo;
+export interface UnionResolveTypeInput {
+  value?: unknown;
+  info: UnionResolveTypeInfo;
 }
 
-export interface IUnionResolveTypeOutput {
-  type?: string;
-  error?: Error;
-}
+export type UnionResolveTypeOutput =
+  | {
+      type?: string | (() => string);
+      error?: Error;
+    }
+  | (() => string)
+  | string;
 
-export type FieldResolveHandler = (input: IFieldResolveInput) => IFieldResolveOutput;
-export type InterfaceResolveTypeHandler = (input: IInterfaceResolveTypeInput) => IInterfaceResolveTypeOutput;
-export type ScalarParseHandler = (input: IScalarParseInput) => IScalarParseOutput;
-export type ScalarSerializeHandler = (input: IScalarSerializeInput) => IScalarSerializeOutput;
-export type UnionResolveTypeHandler = (input: IUnionResolveTypeInput) => IUnionResolveTypeOutput;
+export type FieldResolveHandler = (input: FieldResolveInput) => FieldResolveOutput;
+export type InterfaceResolveTypeHandler = (input: InterfaceResolveTypeInput) => InterfaceResolveTypeOutput;
+export type ScalarParseHandler = (input: ScalarParseInput) => ScalarParseOutput;
+export type ScalarSerializeHandler = (input: ScalarSerializeInput) => ScalarSerializeOutput;
+export type UnionResolveTypeHandler = (input: UnionResolveTypeInput) => UnionResolveTypeOutput;

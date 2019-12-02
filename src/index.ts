@@ -1,5 +1,2 @@
-export {
-  Server,
-  run,
-} from "./server";
-export * from "./api";
+export { Server, run } from './server';
+export * from './api';

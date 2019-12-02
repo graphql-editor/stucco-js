@@ -1,48 +1,51 @@
 #!/usr/bin/env node
 
-import { Server } from "./server";
+import { Server } from './server';
 
-interface IStoppableServer {
-  // blocking serve
+interface StoppableServer {
   serve(): void;
   stop(): Promise<unknown>;
 }
 
-interface IRunOptions {
+interface RunOptions {
   version?: string;
 }
 
-export function runPluginWith(server: IStoppableServer) {
-  return (opts: IRunOptions = {}) => {
-    const {
-      version = process.version,
-    } = opts;
-    if (process.argv.length > 2 && process.argv[2] === "config") {
-      process.stdout.write(JSON.stringify([
-        {
-          provider: "local",
-          runtime: "nodejs",
-        },
-        {
-          provider: "local",
-          runtime: "nodejs-" + version.slice(1, version.indexOf(".")),
-        },
-      ]));
+export const runPluginWith = (server: StoppableServer) => {
+  return (opts: RunOptions = {}): void => {
+    const { version = process.version } = opts;
+    if (process.argv.length > 2 && process.argv[2] === 'config') {
+      process.stdout.write(
+        JSON.stringify([
+          {
+            provider: 'local',
+            runtime: 'nodejs',
+          },
+          {
+            provider: 'local',
+            runtime: 'nodejs-' + version.slice(1, version.indexOf('.')),
+          },
+        ]),
+      );
     } else {
-      const stopServer = () => {
+      const stopServer = (): void => {
         server.stop().catch((e) => console.error(e));
-        process.removeListener("SIGINT", stopServer);
+        process.removeListener('SIGINT', stopServer);
       };
-      process.on("SIGINT", stopServer);
+      process.on('SIGINT', stopServer);
       server.serve();
     }
   };
-}
+};
 
-export function run(opts?: IRunOptions) {
+export const run = (opts?: RunOptions): void => {
   return runPluginWith(new Server())(opts);
-}
+};
 
 if (require.main === module) {
-  run();
+  try {
+    run();
+  } catch (e) {
+    console.error(e);
+  }
 }
