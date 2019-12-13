@@ -91,6 +91,11 @@ export class Value extends jspb.Message {
   getAny_asB64(): string;
   setAny(value: Uint8Array | string): void;
 
+  hasVariable(): boolean;
+  clearVariable(): void;
+  getVariable(): string;
+  setVariable(value: string): void;
+
   getTestValueCase(): Value.TestValueCase;
 
   serializeBinary(): Uint8Array;
@@ -113,6 +118,7 @@ export namespace Value {
     o?: ObjectValue.AsObject;
     a?: ArrayValue.AsObject;
     any: Uint8Array | string;
+    variable: string;
   };
 
   export enum TestValueCase {
@@ -133,6 +139,8 @@ export namespace Value {
     A = 7,
 
     ANY = 8,
+
+    VARIABLE = 9,
   }
 }
 
@@ -223,8 +231,10 @@ export namespace TypeRef {
 }
 
 export class ResponsePath extends jspb.Message {
-  getKey(): string;
-  setKey(value: string): void;
+  hasKey(): boolean;
+  clearKey(): void;
+  getKey(): Value | undefined;
+  setKey(value?: Value): void;
 
   hasPrev(): boolean;
   clearPrev(): void;
@@ -243,7 +253,7 @@ export class ResponsePath extends jspb.Message {
 
 export namespace ResponsePath {
   export type AsObject = {
-    key: string;
+    key?: Value.AsObject;
     prev?: ResponsePath.AsObject;
   };
 }

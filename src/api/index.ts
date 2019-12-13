@@ -20,7 +20,7 @@ export const isListTypeRef = (tp: TypeRef): tp is ListTypeRef => typeof tp !== '
 
 export interface ResponsePath {
   prev?: ResponsePath;
-  key: string;
+  key: unknown;
 }
 
 export interface Directive {

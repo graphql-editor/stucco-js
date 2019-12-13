@@ -990,7 +990,7 @@ proto.proto.ArrayValue.prototype.clearItemsList = function() {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.proto.Value.oneofGroups_ = [[1,2,3,4,5,6,7,8]];
+proto.proto.Value.oneofGroups_ = [[1,2,3,4,5,6,7,8,9]];
 
 /**
  * @enum {number}
@@ -1004,7 +1004,8 @@ proto.proto.Value.TestValueCase = {
   B: 5,
   O: 6,
   A: 7,
-  ANY: 8
+  ANY: 8,
+  VARIABLE: 9
 };
 
 /**
@@ -1052,7 +1053,8 @@ proto.proto.Value.toObject = function(includeInstance, msg) {
     b: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
     o: (f = msg.getO()) && proto.proto.ObjectValue.toObject(includeInstance, f),
     a: (f = msg.getA()) && proto.proto.ArrayValue.toObject(includeInstance, f),
-    any: msg.getAny_asB64()
+    any: msg.getAny_asB64(),
+    variable: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -1122,6 +1124,10 @@ proto.proto.Value.deserializeBinaryFromReader = function(msg, reader) {
     case 8:
       var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setAny(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setVariable(value);
       break;
     default:
       reader.skipField();
@@ -1207,6 +1213,13 @@ proto.proto.Value.serializeBinaryToWriter = function(message, writer) {
   if (f != null) {
     writer.writeBytes(
       8,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 9));
+  if (f != null) {
+    writer.writeString(
+      9,
       f
     );
   }
@@ -1492,6 +1505,38 @@ proto.proto.Value.prototype.clearAny = function() {
  */
 proto.proto.Value.prototype.hasAny = function() {
   return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional string variable = 9;
+ * @return {string}
+ */
+proto.proto.Value.prototype.getVariable = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/** @param {string} value */
+proto.proto.Value.prototype.setVariable = function(value) {
+  jspb.Message.setOneofField(this, 9, proto.proto.Value.oneofGroups_[0], value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ */
+proto.proto.Value.prototype.clearVariable = function() {
+  jspb.Message.setOneofField(this, 9, proto.proto.Value.oneofGroups_[0], undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.proto.Value.prototype.hasVariable = function() {
+  return jspb.Message.getField(this, 9) != null;
 };
 
 
@@ -2046,7 +2091,7 @@ proto.proto.ResponsePath.prototype.toObject = function(opt_includeInstance) {
  */
 proto.proto.ResponsePath.toObject = function(includeInstance, msg) {
   var f, obj = {
-    key: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    key: (f = msg.getKey()) && proto.proto.Value.toObject(includeInstance, f),
     prev: (f = msg.getPrev()) && proto.proto.ResponsePath.toObject(includeInstance, f)
   };
 
@@ -2085,7 +2130,8 @@ proto.proto.ResponsePath.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = new proto.proto.Value;
+      reader.readMessage(value,proto.proto.Value.deserializeBinaryFromReader);
       msg.setKey(value);
       break;
     case 2:
@@ -2123,10 +2169,11 @@ proto.proto.ResponsePath.prototype.serializeBinary = function() {
 proto.proto.ResponsePath.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getKey();
-  if (f.length > 0) {
-    writer.writeString(
+  if (f != null) {
+    writer.writeMessage(
       1,
-      f
+      f,
+      proto.proto.Value.serializeBinaryToWriter
     );
   }
   f = message.getPrev();
@@ -2141,17 +2188,35 @@ proto.proto.ResponsePath.serializeBinaryToWriter = function(message, writer) {
 
 
 /**
- * optional string key = 1;
- * @return {string}
+ * optional Value key = 1;
+ * @return {?proto.proto.Value}
  */
 proto.proto.ResponsePath.prototype.getKey = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type{?proto.proto.Value} */ (
+    jspb.Message.getWrapperField(this, proto.proto.Value, 1));
 };
 
 
-/** @param {string} value */
+/** @param {?proto.proto.Value|undefined} value */
 proto.proto.ResponsePath.prototype.setKey = function(value) {
-  jspb.Message.setProto3StringField(this, 1, value);
+  jspb.Message.setWrapperField(this, 1, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ */
+proto.proto.ResponsePath.prototype.clearKey = function() {
+  this.setKey(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.proto.ResponsePath.prototype.hasKey = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 

@@ -477,13 +477,50 @@ describe('grpc server', () => {
         },
         inputPath: ((): ResponsePath => {
           const rp = new ResponsePath();
-          rp.setKey('sub');
+          const rpKey = new Value();
+          rpKey.setS('sub');
+          rp.setKey(rpKey);
           const prev = new ResponsePath();
-          prev.setKey('root');
+          const rpPrevKey = new Value();
+          rpPrevKey.setS('root');
+          prev.setKey(rpPrevKey);
           rp.setPrev(prev);
           return rp;
         })(),
         title: 'with resolve path',
+      },
+      {
+        expected: epxectedFieldResponse,
+        expectedImport: 'resolveFieldName',
+        functionName: 'resolveFieldName',
+        implementation: newImplementation(() => 'test response'),
+        implementationCalledWith: {
+          info: {
+            fieldName: 'field',
+            path: {
+              key: 'sub',
+              prev: {
+                key: 1,
+              },
+            },
+            returnType: {
+              name: 'String',
+            },
+          },
+        },
+        inputPath: ((): ResponsePath => {
+          const rp = new ResponsePath();
+          const rpKey = new Value();
+          rpKey.setS('sub');
+          rp.setKey(rpKey);
+          const prev = new ResponsePath();
+          const rpPrevKey = new Value();
+          rpPrevKey.setI(1);
+          prev.setKey(rpPrevKey);
+          rp.setPrev(prev);
+          return rp;
+        })(),
+        title: 'with indexed resolve path',
       },
       {
         expected: epxectedFieldResponse,
@@ -763,6 +800,123 @@ describe('grpc server', () => {
         })(),
         title: 'with parent type',
       },
+      {
+        expected: epxectedFieldResponse,
+        expectedImport: 'resolveFieldName',
+        functionName: 'resolveFieldName',
+        implementation: newImplementation(() => 'test response'),
+        implementationCalledWith: {
+          info: {
+            fieldName: 'field',
+            parentType: {
+              name: 'String',
+            },
+            returnType: {
+              name: 'String',
+            },
+          },
+        },
+        inputParentType: ((): TypeRef => {
+          const pt = new TypeRef();
+          pt.setName('String');
+          return pt;
+        })(),
+        title: 'with resolved variables',
+      },
+      {
+        expected: epxectedFieldResponse,
+        expectedImport: 'resolveFieldName',
+        functionName: 'resolveFieldName',
+        implementation: newImplementation(() => 'test response'),
+        implementationCalledWith: {
+          arguments: {
+            arg1: 'value',
+            arg2: 'overridenValue',
+          },
+          info: {
+            fieldName: 'field',
+            operation: {
+              directives: [
+                {
+                  name: '@somedir',
+                  arguments: {
+                    arg1: 'value',
+                    arg2: 'overridenValue',
+                  },
+                },
+              ],
+              name: '',
+              operation: 'query',
+              selectionSet: [],
+              variableDefinitions: [
+                {
+                  variable: {
+                    name: 'variable1',
+                  },
+                  defaultValue: 'value',
+                },
+                {
+                  variable: {
+                    name: 'variable2',
+                  },
+                  defaultValue: 'value',
+                },
+              ],
+            },
+            returnType: {
+              name: 'String',
+            },
+            variableValues: {
+              variable2: 'overridenValue',
+            },
+          },
+        },
+        inputArguments: ((): Array<[string, Value]> => {
+          const arg1Var = new Value();
+          arg1Var.setVariable('variable1');
+          const arg2Var = new Value();
+          arg2Var.setVariable('variable2');
+          return Array.from<[string, Value]>([
+            ['arg1', arg1Var],
+            ['arg2', arg2Var],
+          ]);
+        })(),
+        inputOperation: ((): OperationDefinition => {
+          const op = new OperationDefinition();
+          op.setOperation('query');
+          const directive = new Directive();
+          directive.setName('@somedir');
+          const arg1Var = new Value();
+          arg1Var.setVariable('variable1');
+          directive.getArgumentsMap().set('arg1', arg1Var);
+          const arg2Var = new Value();
+          arg2Var.setVariable('variable2');
+          directive.getArgumentsMap().set('arg2', arg2Var);
+          op.setDirectivesList([directive]);
+          const var1Def = new VariableDefinition();
+          const var1DefaultValue = new Value();
+          var1DefaultValue.setS('value');
+          var1Def.setDefaultvalue(var1DefaultValue);
+          const var1 = new Variable();
+          var1.setName('variable1');
+          var1Def.setVariable(var1);
+          const var2Def = new VariableDefinition();
+          const var2DefaultValue = new Value();
+          var2DefaultValue.setS('value');
+          var2Def.setDefaultvalue(var2DefaultValue);
+          const var2 = new Variable();
+          var2.setName('variable2');
+          var2Def.setVariable(var2);
+          op.setVariabledefinitionsList([var1Def, var2Def]);
+          return op;
+        })(),
+        inputVariablevalues: ((): Array<[string, Value]> => {
+          const var2Value = new Value();
+          var2Value.setS('overridenValue');
+          return [['variable2', var2Value]];
+        })(),
+        title: 'replaces variables',
+      },
     ];
     data.forEach((d) => {
       it(d.title, async () => {
@@ -812,14 +966,14 @@ describe('grpc server', () => {
         const cb = jest.fn();
         await srv.fieldResolve(unary, cb);
         expect(call.request.hasFunction).toBeCalledTimes(1);
-        expect(call.request.getFunction).toBeCalledTimes(1);
+        expect(call.request.getFunction).toBeCalled();
         expect(call.request.hasSource).toBeCalledTimes(1);
         expect(call.request.getInfo).toBeCalledTimes(1);
         expect(call.request.getArgumentsMap).toBeCalledTimes(1);
         expect(call.request.hasProtocol).toBeCalledTimes(1);
         expect(info.getFieldname).toBeCalledTimes(1);
-        expect(info.hasOperation).toBeCalledTimes(1);
-        expect(info.getVariablevaluesMap).toBeCalledTimes(1);
+        expect(info.hasOperation).toBeCalled();
+        expect(info.getVariablevaluesMap).toBeCalled();
         expect(cb).toBeCalledWith(null, d.expected);
         expect(d.implementation).toHaveBeenCalledWith(d.implementationCalledWith);
       });
@@ -981,7 +1135,7 @@ describe('grpc server', () => {
         expect(call.request.getFunction).toBeCalledTimes(1);
         expect(call.request.getInfo).toBeCalledTimes(1);
         expect(call.request.getValue).toBeCalledTimes(1);
-        expect(info.hasOperation).toBeCalledTimes(1);
+        expect(info.hasOperation).toBeCalled();
         expect(info.getVariablevaluesMap).toBeCalledTimes(1);
         expect(cb).toBeCalledWith(null, d.expected);
       });
@@ -1538,7 +1692,7 @@ describe('grpc server', () => {
         expect(call.request.getFunction).toBeCalledTimes(1);
         expect(call.request.getInfo).toBeCalledTimes(1);
         expect(call.request.getValue).toBeCalledTimes(1);
-        expect(info.hasOperation).toBeCalledTimes(1);
+        expect(info.hasOperation).toBeCalled();
         expect(info.getVariablevaluesMap).toBeCalledTimes(1);
         expect(cb).toBeCalledWith(null, d.expected);
       });

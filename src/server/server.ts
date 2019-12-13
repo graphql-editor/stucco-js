@@ -362,10 +362,11 @@ export class Server {
       const response = new FieldResolveResponse();
       const fieldResolve = await this.getHandler<FieldResolveInput, FieldResolveOutput>(call.request);
       const info = this.mustGetInfo(call.request);
+      const variables = this.mapVariables(info);
       const fieldResolveInput: FieldResolveInput = {
-        info: this.grpcInfoLikeToServerInfoLike(info),
+        info: this.grpcInfoLikeToServerInfoLike(info, variables),
       };
-      const args = this.getRecordFromValueMap(call.request.getArgumentsMap());
+      const args = this.getRecordFromValueMap(call.request.getArgumentsMap(), variables);
       if (Object.keys(args).length > 0) {
         fieldResolveInput.arguments = args;
       }
@@ -397,8 +398,9 @@ export class Server {
         call.request,
       );
       const info = this.mustGetInfo(call.request);
+      const variables = this.mapVariables(info);
       const out = await interfaceResolveType({
-        info: this.grpcInfoLikeToServerInfoLike(info),
+        info: this.grpcInfoLikeToServerInfoLike(info, variables),
         value: this.getFromValue(call.request.getValue()),
       });
       this.setResponseType(response, out);
@@ -455,8 +457,9 @@ export class Server {
       const response = new UnionResolveTypeResponse();
       const unionResolveType = await this.getHandler<UnionResolveTypeInput, UnionResolveTypeOutput>(call.request);
       const info = this.mustGetInfo(call.request);
+      const variables = this.mapVariables(info);
       const out = await unionResolveType({
-        info: this.grpcInfoLikeToServerInfoLike(info),
+        info: this.grpcInfoLikeToServerInfoLike(info, variables),
         value: this.getFromValue(call.request.getValue()),
       });
       this.setResponseType(response, out);
@@ -558,7 +561,7 @@ export class Server {
     return (x: T): Promise<U> => Promise.resolve(handler(x));
   }
 
-  private getFromValue(value?: Value): unknown {
+  private getFromValue(value?: Value, variables?: { [key: string]: Value }): unknown {
     if (typeof value === 'undefined') {
       return;
     }
@@ -600,16 +603,25 @@ export class Server {
     if (value.hasAny()) {
       return value.getAny_asU8();
     }
+    if (value.hasVariable()) {
+      if (variables) {
+        return this.getFromValue(variables[value.getVariable()]);
+      }
+      return undefined;
+    }
     // null is marshaled to value without anything set.
     // To reflect that behaviour, we unmarshal empty value
     // also as null.
     return null;
   }
 
-  private getRecordFromValueMap(m: jspb.Map<string, Value>): Record<string, unknown> {
+  private getRecordFromValueMap(
+    m: jspb.Map<string, Value>,
+    variables?: { [k: string]: Value },
+  ): Record<string, unknown> {
     const mm: Record<string, unknown> = {};
     m.forEach((v, k) => {
-      mm[k] = this.getFromValue(v);
+      mm[k] = this.getFromValue(v, variables);
     });
     return mm;
   }
@@ -627,7 +639,7 @@ export class Server {
       return;
     }
     return {
-      key: rp.getKey(),
+      key: this.getFromValue(rp.getKey()),
       prev: this.buildResponsePath(rp.getPrev()),
     };
   }
@@ -677,22 +689,22 @@ export class Server {
     return defs;
   }
 
-  private buildDirective(dir: Directive): APIDirective {
+  private buildDirective(dir: Directive, variables: { [k: string]: Value }): APIDirective {
     return {
-      arguments: this.getRecordFromValueMap(dir.getArgumentsMap()),
+      arguments: this.getRecordFromValueMap(dir.getArgumentsMap(), variables),
       name: dir.getName(),
     };
   }
 
-  private buildDirectives(dirs: Directive[]): APIDirectives {
+  private buildDirectives(dirs: Directive[], variables: { [k: string]: Value }): APIDirectives {
     const hdirs: APIDirectives = [];
     for (const dir of dirs) {
-      hdirs.push(this.buildDirective(dir));
+      hdirs.push(this.buildDirective(dir, variables));
     }
     return hdirs;
   }
 
-  private buildSelection(selection: Selection): APISelection {
+  private buildSelection(selection: Selection, variables: { [k: string]: Value }): APISelection {
     let outSelection: APISelection;
     const name = selection.getName();
     const def = selection.getDefinition();
@@ -701,23 +713,23 @@ export class Server {
         name: selection.getName(),
       };
       if (Object.keys(selection.getArgumentsMap()).length > 0) {
-        outSelection.arguments = this.getRecordFromValueMap(selection.getArgumentsMap());
+        outSelection.arguments = this.getRecordFromValueMap(selection.getArgumentsMap(), variables);
       }
       if (selection.getDirectivesList().length > 0) {
-        outSelection.directives = this.buildDirectives(selection.getDirectivesList());
+        outSelection.directives = this.buildDirectives(selection.getDirectivesList(), variables);
       }
       if (selection.getSelectionsetList().length > 0) {
-        outSelection.selectionSet = this.buildSelections(selection.getSelectionsetList());
+        outSelection.selectionSet = this.buildSelections(selection.getSelectionsetList(), variables);
       }
     } else if (typeof def !== 'undefined') {
       outSelection = {
         definition: {
-          selectionSet: this.buildSelections(def.getSelectionsetList()),
+          selectionSet: this.buildSelections(def.getSelectionsetList(), variables),
           typeCondition: this.buildTypeRef(def.getTypecondition()),
         },
       };
       if (def.getDirectivesList().length > 0) {
-        outSelection.definition.directives = this.buildDirectives(def.getDirectivesList());
+        outSelection.definition.directives = this.buildDirectives(def.getDirectivesList(), variables);
       }
       if (def.getVariabledefinitionsList().length > 0) {
         outSelection.definition.variableDefinitions = this.buildVariableDefinitions(def.getVariabledefinitionsList());
@@ -728,23 +740,26 @@ export class Server {
     return outSelection;
   }
 
-  private buildSelections(selectionSet: Selection[]): Selections {
+  private buildSelections(selectionSet: Selection[], variables: { [k: string]: Value }): Selections {
     const selections: Selections = [];
     for (const sel of selectionSet) {
-      selections.push(this.buildSelection(sel));
+      selections.push(this.buildSelection(sel, variables));
     }
     return selections;
   }
 
-  private buildOperationDefinition(od: OperationDefinition | undefined): APIOperationDefinition | undefined {
+  private buildOperationDefinition(
+    od: OperationDefinition | undefined,
+    variables: { [k: string]: Value },
+  ): APIOperationDefinition | undefined {
     if (typeof od === 'undefined') {
       return;
     }
     return {
-      directives: this.buildDirectives(od.getDirectivesList()),
+      directives: this.buildDirectives(od.getDirectivesList(), variables),
       name: od.getName(),
       operation: od.getOperation(),
-      selectionSet: this.buildSelections(od.getSelectionsetList()),
+      selectionSet: this.buildSelections(od.getSelectionsetList(), variables),
       variableDefinitions: this.buildVariableDefinitions(od.getVariabledefinitionsList()),
     };
   }
@@ -789,20 +804,41 @@ export class Server {
     return val;
   }
 
+  private mapVariables(infoLike: GRPCInfoLike): { [k: string]: Value } {
+    if (!infoLike.hasOperation()) {
+      return {};
+    }
+    const op = infoLike.getOperation();
+    if (!op) {
+      return {};
+    }
+    const variables = op.getVariabledefinitionsList().reduce((pv, cv) => {
+      const variable = cv.getVariable();
+      if (variable) {
+        pv[variable.getName()] = cv.getDefaultvalue() || new Value();
+      }
+      return pv;
+    }, {} as { [k: string]: Value });
+    infoLike.getVariablevaluesMap().forEach((v, k) => {
+      variables[k] = v;
+    });
+    return variables;
+  }
+
   private errorFromHandlerError(err: Error): DriverError | undefined {
     const grpcErr = new DriverError();
     grpcErr.setMsg(err.message || 'unknown error');
     return grpcErr;
   }
 
-  private grpcInfoLikeToServerInfoLike(info: GRPCInfoLike): InfoLike {
+  private grpcInfoLikeToServerInfoLike(info: GRPCInfoLike, variables: { [k: string]: Value }): InfoLike {
     const newInfo: InfoLike = {
       fieldName: info.getFieldname(),
       returnType: this.buildTypeRef(info.getReturntype()),
     };
 
     if (info.hasOperation()) {
-      newInfo.operation = this.buildOperationDefinition(info.getOperation());
+      newInfo.operation = this.buildOperationDefinition(info.getOperation(), variables);
     }
     if (info.hasParenttype()) {
       newInfo.parentType = this.buildTypeRef(info.getParenttype());
