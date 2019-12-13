@@ -4,7 +4,7 @@ import { version } from '../../src/stucco/version';
 
 describe('stucco', () => {
   // file downlaod, be a bit more permissive
-  jest.setTimeout(10000);
+  jest.setTimeout(60000);
   test('fetch correct version', async () => {
     const bin = await stucco();
     expect(
