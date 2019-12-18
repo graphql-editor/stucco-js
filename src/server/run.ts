@@ -8,6 +8,7 @@ interface StoppableServer {
 }
 
 interface RunOptions {
+  enableProfiling?: boolean;
   version?: string;
 }
 
@@ -39,12 +40,12 @@ export const runPluginWith = (server: StoppableServer) => {
 };
 
 export const run = (opts?: RunOptions): void => {
-  return runPluginWith(new Server())(opts);
+  return runPluginWith(new Server(opts))(opts);
 };
 
 if (require.main === module) {
   try {
-    run();
+    run({ enableProfiling: process.env.STUCCO_JS_PROFILE === '1' || process.env.STUCCO_JS_PROFILE === 'true' });
   } catch (e) {
     console.error(e);
   }

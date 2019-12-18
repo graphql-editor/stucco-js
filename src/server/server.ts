@@ -53,10 +53,11 @@ import {
 } from '../proto/driver_pb';
 import { DevNull } from './devnull';
 import { Writable } from 'stream';
+import { Profiler } from './profiler';
 
-interface WithFunction {
+export interface WithFunction {
   hasFunction(): boolean;
-  getFunction(): DriverFunction | undefined;
+  getFunction(): { getName: () => string } | undefined;
 }
 
 interface WriteOverload {
@@ -110,6 +111,7 @@ function hijackWrite(w: WriteOverload, to: WriteOverload): WriteOverload {
 
 interface ServerOptions {
   bindAddress?: string;
+  enableProfiling?: boolean;
   pluginMode?: boolean;
   rootCerts?: string;
   privateKey?: string;
@@ -528,8 +530,26 @@ export class Server {
     );
   }
 
-  private wrap<T, U>(srv: Server, fn: (call: T, callback: U) => void): (call: T, callback: U) => void {
-    return fn.bind(srv);
+  private wrap<T, U extends Array<unknown>, V>(
+    srv: Server,
+    fn: (call: T, callback: (...args: U) => V) => void,
+  ): (call: T, callback: (...args: U) => V) => void {
+    const boundFn = fn.bind(srv);
+    return (call: T, callback: (...args: U) => V): void => {
+      const profiler = new Profiler({ enabled: !!this.serverOpts.enableProfiling });
+      profiler.start();
+      boundFn(
+        call,
+        (...args: U): V => {
+          const r = callback(...args);
+          const report = profiler.report(call && (call as { request?: WithFunction }).request);
+          if (report) {
+            console.error(report);
+          }
+          return r;
+        },
+      );
+    };
   }
 
   private handlerFunc<T, U>(name: string, mod: { [k: string]: unknown }): (x: T) => Promise<U> | U {
