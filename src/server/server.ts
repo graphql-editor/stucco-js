@@ -34,7 +34,6 @@ import {
   FieldResolveInfo,
   FieldResolveRequest,
   FieldResolveResponse,
-  Function as DriverFunction,
   InterfaceResolveTypeRequest,
   InterfaceResolveTypeResponse,
   ObjectValue,
