@@ -114,6 +114,28 @@ function deserialize_proto_ScalarSerializeResponse(buffer_arg) {
   return proto_driver_pb.ScalarSerializeResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_proto_SetSecretsRequest(arg) {
+  if (!(arg instanceof proto_driver_pb.SetSecretsRequest)) {
+    throw new Error('Expected argument of type proto.SetSecretsRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SetSecretsRequest(buffer_arg) {
+  return proto_driver_pb.SetSecretsRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_proto_SetSecretsResponse(arg) {
+  if (!(arg instanceof proto_driver_pb.SetSecretsResponse)) {
+    throw new Error('Expected argument of type proto.SetSecretsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SetSecretsResponse(buffer_arg) {
+  return proto_driver_pb.SetSecretsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_proto_StreamMessage(arg) {
   if (!(arg instanceof proto_driver_pb.StreamMessage)) {
     throw new Error('Expected argument of type proto.StreamMessage');
@@ -214,6 +236,17 @@ var DriverService = exports.DriverService = {
     requestDeserialize: deserialize_proto_UnionResolveTypeRequest,
     responseSerialize: serialize_proto_UnionResolveTypeResponse,
     responseDeserialize: deserialize_proto_UnionResolveTypeResponse,
+  },
+  setSecrets: {
+    path: '/proto.Driver/SetSecrets',
+    requestStream: false,
+    responseStream: false,
+    requestType: proto_driver_pb.SetSecretsRequest,
+    responseType: proto_driver_pb.SetSecretsResponse,
+    requestSerialize: serialize_proto_SetSecretsRequest,
+    requestDeserialize: deserialize_proto_SetSecretsRequest,
+    responseSerialize: serialize_proto_SetSecretsResponse,
+    responseDeserialize: deserialize_proto_SetSecretsResponse,
   },
   stream: {
     path: '/proto.Driver/Stream',

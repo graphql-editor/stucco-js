@@ -208,7 +208,9 @@ describe('grpc server', () => {
       {
         expected: ((): FieldResolveResponse => {
           const expectedResponse = new FieldResolveResponse();
-          expectedResponse.setResponse(new Value());
+          const nilValue = new Value();
+          nilValue.setNil(true);
+          expectedResponse.setResponse(nilValue);
           return expectedResponse;
         })(),
         expectedImport: 'resolveFieldName',
@@ -1462,6 +1464,7 @@ describe('grpc server', () => {
           const integralValue = new Value();
           integralValue.setI(1);
           const nullObjectValue = new Value();
+          nullObjectValue.setNil(true);
           const objectValue = new Value();
           objectValue.setO(new ObjectValue());
           objectValue

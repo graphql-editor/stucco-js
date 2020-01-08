@@ -1,54 +1,45 @@
 import { readFileSync } from 'fs';
-import * as jspb from 'google-protobuf';
 import * as grpc from 'grpc';
 import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-ts-health-check';
-import { extname } from 'path';
+import { getHandler } from '../handler/handler';
 import {
-  Directive as APIDirective,
-  Directives as APIDirectives,
   FieldResolveInput,
   FieldResolveOutput,
   InterfaceResolveTypeInput,
   InterfaceResolveTypeOutput,
-  OperationDefinition as APIOperationDefinition,
-  ResponsePath as APIResponsePath,
   ScalarParseInput,
   ScalarParseOutput,
   ScalarSerializeInput,
   ScalarSerializeOutput,
-  Selections,
   UnionResolveTypeInput,
   UnionResolveTypeOutput,
-  VariableDefinition as APIVariableDefinition,
-  VariableDefinitions as APIVariableDefinitions,
-  Selection as APISelection,
-  TypeRef as APITypeRef,
-  HttpRequest,
+  SetSecretsOutput,
 } from '../api';
 import { DriverService } from '../proto/driver_grpc_pb';
 import {
-  ArrayValue,
+  fieldResolve,
+  interfaceResolveType,
+  makeGrpcError,
+  setSecrets,
+  scalarParse,
+  scalarSerialize,
+  unionResolveType,
+} from '../proto/driver/driver';
+import {
   ByteStream,
-  Directive,
   Error as DriverError,
-  FieldResolveInfo,
   FieldResolveRequest,
   FieldResolveResponse,
   InterfaceResolveTypeRequest,
   InterfaceResolveTypeResponse,
-  ObjectValue,
-  OperationDefinition,
-  ResponsePath,
   ScalarParseRequest,
   ScalarParseResponse,
   ScalarSerializeRequest,
   ScalarSerializeResponse,
-  Selection,
-  TypeRef,
   UnionResolveTypeRequest,
   UnionResolveTypeResponse,
-  Value,
-  VariableDefinition,
+  SetSecretsRequest,
+  SetSecretsResponse,
 } from '../proto/driver_pb';
 import { DevNull } from './devnull';
 import { Writable } from 'stream';
@@ -63,29 +54,6 @@ interface WriteOverload {
   (buffer: string | Buffer | Uint8Array, cb?: ((err?: Error | null | undefined) => void) | undefined): boolean;
   (str: string, encoding?: string | undefined, cb?: ((err?: Error | null | undefined) => void) | undefined): boolean;
 }
-
-const isHttpRequestProtocol = (protocol: unknown): protocol is HttpRequest => {
-  if (typeof protocol !== 'object' || protocol === null) {
-    return false;
-  }
-  if (!('headers' in protocol)) {
-    return false;
-  }
-  const unknownHeaders = (protocol as { headers: unknown }).headers;
-  if (typeof unknownHeaders !== 'object' || unknownHeaders === null) {
-    return false;
-  }
-  const headers = unknownHeaders as { [k: string]: unknown };
-  return (
-    Object.keys(headers).find((k) => {
-      const header = headers[k];
-      if (!Array.isArray(header)) {
-        return true;
-      }
-      return header.find((el) => typeof el !== 'string');
-    }) === undefined
-  );
-};
 
 function hijackWrite(w: WriteOverload, to: WriteOverload): WriteOverload {
   const hijack: WriteOverload = (
@@ -127,74 +95,13 @@ interface GRPCServer {
   bind: typeof grpc.Server.prototype.bind;
 }
 
-interface GRPCInfoLike {
-  getFieldname: typeof FieldResolveInfo.prototype.getFieldname;
-  hasPath: typeof FieldResolveInfo.prototype.hasPath;
-  getPath: typeof FieldResolveInfo.prototype.getPath;
-  getReturntype: typeof FieldResolveInfo.prototype.getReturntype;
-  hasParenttype: typeof FieldResolveInfo.prototype.hasParenttype;
-  getParenttype: typeof FieldResolveInfo.prototype.getParenttype;
-  hasOperation: typeof FieldResolveInfo.prototype.hasOperation;
-  getOperation: typeof FieldResolveInfo.prototype.getOperation;
-  getVariablevaluesMap: typeof FieldResolveInfo.prototype.getVariablevaluesMap;
-}
-
-interface InfoLike {
-  fieldName: string;
-  path?: APIResponsePath;
-  returnType?: APITypeRef;
-  parentType?: APITypeRef;
-  operation?: APIOperationDefinition;
-  variableValues?: Record<string, unknown>;
-}
-
-interface Response {
-  response: unknown;
-}
-
-function isResponse(
-  v:
-    | {
-        response?: unknown;
-      }
-    | unknown,
-): v is Response {
-  return (
-    typeof v === 'object' && !!v && 'response' in v && typeof (v as { response?: unknown }).response !== 'undefined'
-  );
-}
-
-interface Type {
-  type: string | (() => string);
-}
-
-function isType(
-  v:
-    | {
-        type?: unknown;
-      }
-    | unknown,
-): v is Type {
-  return (
-    typeof v === 'object' &&
-    !!v &&
-    'type' in v &&
-    (typeof (v as { type?: unknown }).type === 'string' || typeof (v as { type?: unknown }).type === 'function')
-  );
-}
-
-interface HasError {
-  error: Error;
-}
-
-function hasError(
-  v:
-    | {
-        error?: Error;
-      }
-    | unknown,
-): v is HasError {
-  return typeof v === 'object' && !!v && 'error' in v;
+function doError(
+  e: unknown,
+  v: {
+    setError: (err: DriverError) => void;
+  },
+): void {
+  v.setError(makeGrpcError(e));
 }
 
 export class Server {
@@ -213,6 +120,7 @@ export class Server {
       interfaceResolveType: this.wrap(this, this.interfaceResolveType),
       scalarParse: this.wrap(this, this.scalarParse),
       scalarSerialize: this.wrap(this, this.scalarSerialize),
+      setSecrets: this.wrap(this, this.setSecrets),
       stderr: this.wrap(this, this.stderr),
       stdout: this.wrap(this, this.stdout),
       stream: undefined,
@@ -222,170 +130,18 @@ export class Server {
     this.stderrStreams = [];
   }
 
-  public doError<
-    T extends {
-      setError: (value?: DriverError) => void;
-    }
-  >(
-    e: {
-      message?: string;
-    },
-    ctor: new () => T,
-    cb: (e: grpc.ServiceError | null, resp: T) => void,
-  ): void {
-    console.error(e);
-    const response = new ctor();
-    const grpcErr = new DriverError();
-    grpcErr.setMsg(e && e.message ? e.message : 'unknown error');
-    response.setError(grpcErr);
-    cb(null, response);
-  }
-
-  public valueFromResponse(
-    out?:
-      | {
-          [k: string]: unknown;
-          response: unknown;
-          error?: Error;
-        }
-      | (() => unknown)
-      | unknown,
-  ): Value | undefined {
-    if (typeof out === 'function') {
-      out = { response: out() };
-    } else if (!isResponse(out) && !hasError(out)) {
-      out = { response: out };
-    }
-    let responseData: unknown;
-    if (isResponse(out) && !hasError(out)) {
-      if (typeof out.response === 'function') {
-        out.response = out.response();
-      }
-      responseData = out.response;
-    }
-    if (hasError(out) && !responseData) {
-      return;
-    }
-    return this.valueFromAny(responseData);
-  }
-
-  public setResponseResponse(
-    resp: {
-      setResponse: (value?: Value) => void;
-    },
-    out?:
-      | {
-          response?: unknown;
-          error?: Error;
-        }
-      | (() => unknown)
-      | unknown,
-  ): void {
-    const val = this.valueFromResponse(out);
-    if (val) {
-      resp.setResponse(this.valueFromResponse(out));
-    }
-  }
-
-  public setResponseType(
-    resp: {
-      setType: (value?: TypeRef) => void;
-    },
-    out?:
-      | {
-          type?: string | (() => string);
-          error?: Error;
-        }
-      | string
-      | (() => string),
-  ): void {
-    if (typeof out === 'function') {
-      out = { type: out() };
-    } else if (typeof out === 'string') {
-      out = { type: out };
-    }
-    let type = '';
-    if (isType(out)) {
-      if (typeof out.type === 'function') {
-        out.type = out.type();
-      }
-      type = out.type;
-    }
-    if (!type) {
-      if (hasError(out)) {
-        return;
-      }
-      throw new Error('type cannot be empty');
-    }
-    const t = new TypeRef();
-    t.setName(type);
-    resp.setType(t);
-  }
-
-  public setResponseValue(
-    resp: {
-      setValue: (value?: Value) => void;
-    },
-    out?:
-      | {
-          response?: unknown | (() => unknown);
-          error?: Error;
-        }
-      | (() => unknown)
-      | unknown,
-  ): void {
-    const val = this.valueFromResponse(out);
-    if (val) {
-      resp.setValue(this.valueFromResponse(out));
-    }
-  }
-
-  public setResponseError(
-    resp: {
-      setError: (value?: DriverError) => void;
-    },
-    out?:
-      | {
-          error?: Error;
-        }
-      | unknown,
-  ): void {
-    if (hasError(out)) {
-      resp.setError(this.errorFromHandlerError(out.error));
-    }
-  }
-
   public async fieldResolve(
     call: grpc.ServerUnaryCall<FieldResolveRequest>,
     callback: grpc.sendUnaryData<FieldResolveResponse>,
   ): Promise<void> {
     try {
-      const response = new FieldResolveResponse();
-      const fieldResolve = await this.getHandler<FieldResolveInput, FieldResolveOutput>(call.request);
-      const info = this.mustGetInfo(call.request);
-      const variables = this.mapVariables(info);
-      const fieldResolveInput: FieldResolveInput = {
-        info: this.grpcInfoLikeToServerInfoLike(info, variables),
-      };
-      const args = this.getRecordFromValueMap(call.request.getArgumentsMap(), variables);
-      if (Object.keys(args).length > 0) {
-        fieldResolveInput.arguments = args;
-      }
-      if (call.request.hasProtocol()) {
-        const protocol = this.getFromValue(call.request.getProtocol());
-        if (isHttpRequestProtocol(protocol)) {
-          fieldResolveInput.protocol = protocol;
-        }
-      }
-      if (call.request.hasSource()) {
-        fieldResolveInput.source = this.getFromValue(call.request.getSource());
-      }
-      const out = await fieldResolve(fieldResolveInput);
-      this.setResponseResponse(response, out);
-      this.setResponseError(response, out);
+      const handler = await getHandler<FieldResolveInput, FieldResolveOutput>(call.request);
+      const response = await fieldResolve(call.request, handler);
       callback(null, response);
     } catch (e) {
-      this.doError(e, FieldResolveResponse, callback);
+      const response = new FieldResolveResponse();
+      doError(e, response);
+      callback(null, response);
     }
   }
 
@@ -394,21 +150,35 @@ export class Server {
     callback: grpc.sendUnaryData<InterfaceResolveTypeResponse>,
   ): Promise<void> {
     try {
-      const response = new InterfaceResolveTypeResponse();
-      const interfaceResolveType = await this.getHandler<InterfaceResolveTypeInput, InterfaceResolveTypeOutput>(
-        call.request,
-      );
-      const info = this.mustGetInfo(call.request);
-      const variables = this.mapVariables(info);
-      const out = await interfaceResolveType({
-        info: this.grpcInfoLikeToServerInfoLike(info, variables),
-        value: this.getFromValue(call.request.getValue()),
-      });
-      this.setResponseType(response, out);
-      this.setResponseError(response, out);
+      const handler = await getHandler<InterfaceResolveTypeInput, InterfaceResolveTypeOutput>(call.request);
+      const response = await interfaceResolveType(call.request, handler);
       callback(null, response);
     } catch (e) {
-      this.doError(e, InterfaceResolveTypeResponse, callback);
+      const response = new InterfaceResolveTypeResponse();
+      doError(e, response);
+      callback(null, response);
+    }
+  }
+
+  public async setSecrets(
+    call: grpc.ServerUnaryCall<SetSecretsRequest>,
+    callback: grpc.sendUnaryData<SetSecretsResponse>,
+  ): Promise<void> {
+    try {
+      const response = await setSecrets(
+        call.request,
+        async (secrets): Promise<SetSecretsOutput> => {
+          Object.keys(secrets.secrets).forEach((k) => {
+            process.env[k] = secrets.secrets[k];
+          });
+          return;
+        },
+      );
+      callback(null, response);
+    } catch (e) {
+      const response = new SetSecretsResponse();
+      doError(e, response);
+      callback(null, response);
     }
   }
 
@@ -417,17 +187,13 @@ export class Server {
     callback: grpc.sendUnaryData<ScalarParseResponse>,
   ): Promise<void> {
     try {
-      const response = new ScalarParseResponse();
-      const scalarParseHandler = await this.getHandler<ScalarParseInput, ScalarParseOutput>(call.request);
-      const data = this.getFromValue(call.request.getValue());
-      const out = await scalarParseHandler({
-        value: data,
-      });
-      this.setResponseValue(response, out);
-      this.setResponseError(response, out);
+      const handler = await getHandler<ScalarParseInput, ScalarParseOutput>(call.request);
+      const response = await scalarParse(call.request, handler);
       callback(null, response);
     } catch (e) {
-      this.doError(e, ScalarParseResponse, callback);
+      const response = new ScalarParseResponse();
+      doError(e, response);
+      callback(null, response);
     }
   }
 
@@ -436,17 +202,13 @@ export class Server {
     callback: grpc.sendUnaryData<ScalarSerializeResponse>,
   ): Promise<void> {
     try {
-      const response = new ScalarSerializeResponse();
-      const scalarSerializeHandler = await this.getHandler<ScalarSerializeInput, ScalarSerializeOutput>(call.request);
-      const data = this.getFromValue(call.request.getValue());
-      const out = await scalarSerializeHandler({
-        value: data,
-      });
-      this.setResponseValue(response, out);
-      this.setResponseError(response, out);
+      const handler = await getHandler<ScalarSerializeInput, ScalarSerializeOutput>(call.request);
+      const response = await scalarSerialize(call.request, handler);
       callback(null, response);
     } catch (e) {
-      this.doError(e, ScalarSerializeResponse, callback);
+      const response = new ScalarSerializeResponse();
+      doError(e, response);
+      callback(null, response);
     }
   }
 
@@ -455,19 +217,13 @@ export class Server {
     callback: grpc.sendUnaryData<UnionResolveTypeResponse>,
   ): Promise<void> {
     try {
-      const response = new UnionResolveTypeResponse();
-      const unionResolveType = await this.getHandler<UnionResolveTypeInput, UnionResolveTypeOutput>(call.request);
-      const info = this.mustGetInfo(call.request);
-      const variables = this.mapVariables(info);
-      const out = await unionResolveType({
-        info: this.grpcInfoLikeToServerInfoLike(info, variables),
-        value: this.getFromValue(call.request.getValue()),
-      });
-      this.setResponseType(response, out);
-      this.setResponseError(response, out);
+      const handler = await getHandler<UnionResolveTypeInput, UnionResolveTypeOutput>(call.request);
+      const response = await unionResolveType(call.request, handler);
       callback(null, response);
     } catch (e) {
-      this.doError(e, UnionResolveTypeResponse, callback);
+      const response = new UnionResolveTypeResponse();
+      doError(e, response);
+      callback(null, response);
     }
   }
 
@@ -549,327 +305,6 @@ export class Server {
         },
       );
     };
-  }
-
-  private handlerFunc<T, U>(name: string, mod: { [k: string]: unknown }): (x: T) => Promise<U> | U {
-    if (!name) {
-      if ('handler' in mod && typeof mod.handler === 'function') {
-        return mod.handler as (x: T) => Promise<U> | U;
-      }
-      if ('default' in mod && typeof mod.default === 'function') {
-        return mod.default as (x: T) => Promise<U> | U;
-      }
-    } else if (name in mod) {
-      return mod[name] as (x: T) => Promise<U> | U;
-    }
-    throw new TypeError('invalid handler module');
-  }
-
-  private async getHandler<T, U>(req: WithFunction): Promise<(x: T) => Promise<U | undefined>> {
-    if (!req.hasFunction()) {
-      throw new Error('missing function');
-    }
-    const fn = req.getFunction();
-    if (typeof fn === 'undefined' || !fn.getName()) {
-      throw new Error(`function name is empty`);
-    }
-    const fnName = fn.getName();
-    const ext = extname(fnName) !== '.js' ? extname(fnName) : '';
-    const mod = await import(`${process.cwd()}/${fnName.slice(0, fnName.length - ext.length)}`);
-    const handler = this.handlerFunc<T, U>(ext.slice(1), mod);
-    return (x: T): Promise<U> => Promise.resolve(handler(x));
-  }
-
-  private getFromValue(value?: Value, variables?: { [key: string]: Value }): unknown {
-    if (typeof value === 'undefined') {
-      return;
-    }
-    if (value.hasI()) {
-      return value.getI();
-    }
-    if (value.hasU()) {
-      return value.getU();
-    }
-    if (value.hasF()) {
-      return value.getF();
-    }
-    if (value.hasS()) {
-      return value.getS();
-    }
-    if (value.hasB()) {
-      return value.getB();
-    }
-    if (value.hasO()) {
-      const obj: { [k: string]: unknown } = {};
-      const o = value.getO();
-      if (o) {
-        o.getPropsMap().forEach((v: Value, k: string) => {
-          obj[k] = this.getFromValue(v);
-        });
-      }
-      return obj;
-    }
-    if (value.hasA()) {
-      const arr: unknown[] = [];
-      const a = value.getA();
-      if (a) {
-        a.getItemsList().forEach((v) => {
-          arr.push(this.getFromValue(v));
-        });
-      }
-      return arr;
-    }
-    if (value.hasAny()) {
-      return value.getAny_asU8();
-    }
-    if (value.hasVariable()) {
-      if (variables) {
-        return this.getFromValue(variables[value.getVariable()]);
-      }
-      return undefined;
-    }
-    // null is marshaled to value without anything set.
-    // To reflect that behaviour, we unmarshal empty value
-    // also as null.
-    return null;
-  }
-
-  private getRecordFromValueMap(
-    m: jspb.Map<string, Value>,
-    variables?: { [k: string]: Value },
-  ): Record<string, unknown> {
-    const mm: Record<string, unknown> = {};
-    m.forEach((v, k) => {
-      mm[k] = this.getFromValue(v, variables);
-    });
-    return mm;
-  }
-
-  private mustGetInfo<T>(req: { getInfo: () => T | undefined }): T {
-    const info = req.getInfo();
-    if (typeof info === 'undefined') {
-      throw new Error('info is required');
-    }
-    return info;
-  }
-
-  private buildResponsePath(rp: ResponsePath | undefined): APIResponsePath | undefined {
-    if (typeof rp === 'undefined') {
-      return;
-    }
-    return {
-      key: this.getFromValue(rp.getKey()),
-      prev: this.buildResponsePath(rp.getPrev()),
-    };
-  }
-
-  private buildTypeRef(tr: TypeRef | undefined): APITypeRef | undefined {
-    let hTypeRef: APITypeRef | undefined;
-    if (typeof tr !== 'undefined') {
-      if (tr.getName() !== '') {
-        hTypeRef = {
-          name: tr.getName(),
-        };
-      } else if (typeof tr.getNonnull() !== 'undefined') {
-        hTypeRef = {
-          nonNull: this.buildTypeRef(tr.getNonnull()),
-        };
-      } else if (typeof tr.getList() !== 'undefined') {
-        hTypeRef = {
-          list: this.buildTypeRef(tr.getList()),
-        };
-      }
-    }
-    return hTypeRef;
-  }
-
-  private buildVariableDefinition(vd: VariableDefinition): APIVariableDefinition | undefined {
-    const vr = vd.getVariable();
-    if (typeof vr === 'undefined') {
-      return;
-    }
-    return {
-      defaultValue: this.getFromValue(vd.getDefaultvalue()),
-      variable: {
-        name: vr.getName(),
-      },
-    };
-  }
-
-  private buildVariableDefinitions(vds: VariableDefinition[]): APIVariableDefinitions {
-    const defs: APIVariableDefinitions = [];
-    for (const vd of vds) {
-      const def = this.buildVariableDefinition(vd);
-      if (typeof def === 'undefined') {
-        continue;
-      }
-      defs.push(def);
-    }
-    return defs;
-  }
-
-  private buildDirective(dir: Directive, variables: { [k: string]: Value }): APIDirective {
-    return {
-      arguments: this.getRecordFromValueMap(dir.getArgumentsMap(), variables),
-      name: dir.getName(),
-    };
-  }
-
-  private buildDirectives(dirs: Directive[], variables: { [k: string]: Value }): APIDirectives {
-    const hdirs: APIDirectives = [];
-    for (const dir of dirs) {
-      hdirs.push(this.buildDirective(dir, variables));
-    }
-    return hdirs;
-  }
-
-  private buildSelection(selection: Selection, variables: { [k: string]: Value }): APISelection {
-    let outSelection: APISelection;
-    const name = selection.getName();
-    const def = selection.getDefinition();
-    if (name !== '') {
-      outSelection = {
-        name: selection.getName(),
-      };
-      if (Object.keys(selection.getArgumentsMap()).length > 0) {
-        outSelection.arguments = this.getRecordFromValueMap(selection.getArgumentsMap(), variables);
-      }
-      if (selection.getDirectivesList().length > 0) {
-        outSelection.directives = this.buildDirectives(selection.getDirectivesList(), variables);
-      }
-      if (selection.getSelectionsetList().length > 0) {
-        outSelection.selectionSet = this.buildSelections(selection.getSelectionsetList(), variables);
-      }
-    } else if (typeof def !== 'undefined') {
-      outSelection = {
-        definition: {
-          selectionSet: this.buildSelections(def.getSelectionsetList(), variables),
-          typeCondition: this.buildTypeRef(def.getTypecondition()),
-        },
-      };
-      if (def.getDirectivesList().length > 0) {
-        outSelection.definition.directives = this.buildDirectives(def.getDirectivesList(), variables);
-      }
-      if (def.getVariabledefinitionsList().length > 0) {
-        outSelection.definition.variableDefinitions = this.buildVariableDefinitions(def.getVariabledefinitionsList());
-      }
-    } else {
-      throw new Error('invalid selection');
-    }
-    return outSelection;
-  }
-
-  private buildSelections(selectionSet: Selection[], variables: { [k: string]: Value }): Selections {
-    const selections: Selections = [];
-    for (const sel of selectionSet) {
-      selections.push(this.buildSelection(sel, variables));
-    }
-    return selections;
-  }
-
-  private buildOperationDefinition(
-    od: OperationDefinition | undefined,
-    variables: { [k: string]: Value },
-  ): APIOperationDefinition | undefined {
-    if (typeof od === 'undefined') {
-      return;
-    }
-    return {
-      directives: this.buildDirectives(od.getDirectivesList(), variables),
-      name: od.getName(),
-      operation: od.getOperation(),
-      selectionSet: this.buildSelections(od.getSelectionsetList(), variables),
-      variableDefinitions: this.buildVariableDefinitions(od.getVariabledefinitionsList()),
-    };
-  }
-
-  private valueFromAny(data: unknown): Value {
-    const val = new Value();
-    if (Buffer.isBuffer(data)) {
-      val.setAny(Uint8Array.from(data));
-    } else if (ArrayBuffer.isView(data)) {
-      val.setAny(new Uint8Array(data.buffer));
-    } else if (Array.isArray(data)) {
-      const arr = new ArrayValue();
-      arr.setItemsList(data.map((v) => this.valueFromAny(v)));
-      val.setA(arr);
-    } else {
-      switch (typeof data) {
-        case 'number':
-          if (data % 1 === 0) {
-            val.setI(data);
-          } else {
-            val.setF(data);
-          }
-          break;
-        case 'string':
-          val.setS(data);
-          break;
-        case 'boolean':
-          val.setB(data);
-          break;
-        case 'object':
-          if (data !== null) {
-            const keyData = data as { [k: string]: unknown };
-            const obj = new ObjectValue();
-            Object.keys(data).forEach((k) => {
-              obj.getPropsMap().set(k, this.valueFromAny(keyData[k]));
-            });
-            val.setO(obj);
-            break;
-          }
-      }
-    }
-    return val;
-  }
-
-  private mapVariables(infoLike: GRPCInfoLike): { [k: string]: Value } {
-    if (!infoLike.hasOperation()) {
-      return {};
-    }
-    const op = infoLike.getOperation();
-    if (!op) {
-      return {};
-    }
-    const variables = op.getVariabledefinitionsList().reduce((pv, cv) => {
-      const variable = cv.getVariable();
-      if (variable) {
-        pv[variable.getName()] = cv.getDefaultvalue() || new Value();
-      }
-      return pv;
-    }, {} as { [k: string]: Value });
-    infoLike.getVariablevaluesMap().forEach((v, k) => {
-      variables[k] = v;
-    });
-    return variables;
-  }
-
-  private errorFromHandlerError(err: Error): DriverError | undefined {
-    const grpcErr = new DriverError();
-    grpcErr.setMsg(err.message || 'unknown error');
-    return grpcErr;
-  }
-
-  private grpcInfoLikeToServerInfoLike(info: GRPCInfoLike, variables: { [k: string]: Value }): InfoLike {
-    const newInfo: InfoLike = {
-      fieldName: info.getFieldname(),
-      returnType: this.buildTypeRef(info.getReturntype()),
-    };
-
-    if (info.hasOperation()) {
-      newInfo.operation = this.buildOperationDefinition(info.getOperation(), variables);
-    }
-    if (info.hasParenttype()) {
-      newInfo.parentType = this.buildTypeRef(info.getParenttype());
-    }
-    if (info.hasPath()) {
-      newInfo.path = this.buildResponsePath(info.getPath());
-    }
-    const variableValues = this.getRecordFromValueMap(info.getVariablevaluesMap());
-    if (Object.keys(variableValues).length > 0) {
-      newInfo.variableValues = variableValues;
-    }
-    return newInfo;
   }
 
   private stdout(call: Writable): void {

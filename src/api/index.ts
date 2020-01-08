@@ -124,6 +124,19 @@ export type InterfaceResolveTypeOutput =
   | (() => string)
   | string;
 
+export interface SetSecretsInput {
+  secrets: {
+    [k: string]: string;
+  };
+}
+
+export type SetSecretsOutput =
+  | {
+      error?: Error;
+    }
+  | (() => void)
+  | undefined;
+
 export interface ScalarParseInput {
   value: unknown;
 }

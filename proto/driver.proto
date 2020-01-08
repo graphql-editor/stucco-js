@@ -2,11 +2,11 @@ syntax = "proto3";
 package proto;
 
 message ObjectValue {
-    map<string, Value> props = 6;
+    map<string, Value> props = 1;
 }
 
 message ArrayValue {
-  repeated Value items = 7;
+  repeated Value items = 1;
 }
 
 message Value {
@@ -20,6 +20,7 @@ message Value {
       ArrayValue a = 7;
       bytes any = 8;
       string variable = 9;
+      bool nil = 10;
     }
 }
 
@@ -164,6 +165,19 @@ message UnionResolveTypeResponse {
 	Error error = 2;
 }
 
+message Secret {
+  string Key = 1;
+  string Value = 2;
+}
+
+message SetSecretsRequest {
+  repeated Secret secrets = 1;
+}
+
+message SetSecretsResponse {
+  Error error = 1;
+}
+
 message StreamInfo {
 	string fieldName = 1;
 	ResponsePath path = 2;
@@ -198,6 +212,7 @@ service Driver {
 	rpc ScalarParse(ScalarParseRequest) returns (ScalarParseResponse);
 	rpc ScalarSerialize(ScalarSerializeRequest) returns (ScalarSerializeResponse);
 	rpc UnionResolveType(UnionResolveTypeRequest) returns (UnionResolveTypeResponse);
+    rpc SetSecrets(SetSecretsRequest) returns (SetSecretsResponse);
 	rpc Stream(StreamRequest) returns(stream StreamMessage);
 	rpc Stdout(ByteStreamRequest) returns(stream ByteStream);
 	rpc Stderr(ByteStreamRequest) returns(stream ByteStream);
