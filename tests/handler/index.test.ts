@@ -1,4 +1,4 @@
-import { getHandler } from '../../src/handler/handler';
+import { getHandler } from '../../src/handler';
 
 interface WithFunction {
   hasFunction(): boolean;

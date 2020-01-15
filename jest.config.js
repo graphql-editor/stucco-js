@@ -2,7 +2,7 @@ module.exports = {
 	roots: ["<rootDir>/src", "<rootDir>/tests"],
 	collectCoverageFrom: [
 		"**/src/**/*.ts",
-		"!**/src/proto/**/*.ts",
+		"!**/src/proto/*.ts",
 	],
 	collectCoverage: true,
 	transform: {'^.+\\.ts?$': 'ts-jest'},

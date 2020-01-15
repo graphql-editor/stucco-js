@@ -1,30 +1,18 @@
 import { readFileSync } from 'fs';
+import { Console } from 'console';
 import * as grpc from 'grpc';
 import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-ts-health-check';
-import { getHandler } from '../handler/handler';
-import {
-  FieldResolveInput,
-  FieldResolveOutput,
-  InterfaceResolveTypeInput,
-  InterfaceResolveTypeOutput,
-  ScalarParseInput,
-  ScalarParseOutput,
-  ScalarSerializeInput,
-  ScalarSerializeOutput,
-  UnionResolveTypeInput,
-  UnionResolveTypeOutput,
-  SetSecretsOutput,
-} from '../api';
+import { getHandler } from '../handler';
 import { DriverService } from '../proto/driver_grpc_pb';
 import {
   fieldResolve,
   interfaceResolveType,
-  makeGrpcError,
+  makeProtoError,
   setSecrets,
   scalarParse,
   scalarSerialize,
   unionResolveType,
-} from '../proto/driver/driver';
+} from '../proto/driver';
 import {
   ByteStream,
   Error as DriverError,
@@ -44,36 +32,39 @@ import {
 import { DevNull } from './devnull';
 import { Writable } from 'stream';
 import { Profiler } from './profiler';
+import { setSecretsEnvironment } from '../raw/set_secrets';
 
 export interface WithFunction {
   hasFunction(): boolean;
   getFunction(): { getName: () => string } | undefined;
 }
 
-interface WriteOverload {
-  (buffer: string | Buffer | Uint8Array, cb?: ((err?: Error | null | undefined) => void) | undefined): boolean;
-  (str: string, encoding?: string | undefined, cb?: ((err?: Error | null | undefined) => void) | undefined): boolean;
+type writeFuncType = typeof process.stdout.write;
+
+function hijackWrite(w: writeFuncType, to: writeFuncType): writeFuncType {
+  const hijack = (
+    first: Parameters<writeFuncType>[0],
+    second: Parameters<writeFuncType>[1],
+    third: Parameters<writeFuncType>[2],
+  ): boolean => {
+    to(first, second, third);
+    return w(first, second, third);
+  };
+  return hijack as writeFuncType;
 }
 
-function hijackWrite(w: WriteOverload, to: WriteOverload): WriteOverload {
-  const hijack: WriteOverload = (
-    first: string | Buffer | Uint8Array,
-    second: ((err?: Error | null | undefined) => void) | string | undefined,
-    cb?: ((err?: Error | null | undefined) => void) | undefined,
-  ): boolean => {
-    if (typeof first === 'string' && (typeof second === 'string' || typeof second === 'undefined')) {
-      to(first, second, cb);
-      return w(first, second, cb);
-    } else if (
-      (typeof first === 'string' || Buffer.isBuffer(first) || ArrayBuffer.isView(first)) &&
-      typeof second === 'function'
-    ) {
-      to(first, second);
-      return w(first, second);
-    }
-    return false;
-  };
-  return hijack;
+function isCallRequestWithFunction(
+  v: unknown,
+): v is {
+  request: WithFunction;
+} {
+  let request: WithFunction | unknown;
+  if (typeof v === 'object' && 'request' in v) {
+    request = (v as {
+      request: unknown;
+    }).request;
+  }
+  return request && typeof request === 'object' && 'hasFunction' in request && 'getFunction' in request;
 }
 
 interface ServerOptions {
@@ -95,13 +86,12 @@ interface GRPCServer {
   bind: typeof grpc.Server.prototype.bind;
 }
 
-function doError(
-  e: unknown,
-  v: {
-    setError: (err: DriverError) => void;
-  },
-): void {
-  v.setError(makeGrpcError(e));
+interface WithError {
+  setError: (err: DriverError) => void;
+}
+
+function doError(e: unknown, v: WithError): void {
+  v.setError(makeProtoError(e));
 }
 
 export class Server {
@@ -130,121 +120,92 @@ export class Server {
     this.stderrStreams = [];
   }
 
+  private async executeUserHandler<T extends WithFunction, U extends WithError, V, W>(
+    call: grpc.ServerUnaryCall<T>,
+    callback: grpc.sendUnaryData<U>,
+    responseCtor: {
+      new (): U;
+    },
+    fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
+  ): Promise<void> {
+    try {
+      const handler = await getHandler<V, W>(call.request);
+      const response = await fn(call.request, handler);
+      callback(null, response);
+    } catch (e) {
+      const response = new responseCtor();
+      doError(e, response);
+      callback(null, response);
+    }
+  }
+
   public async fieldResolve(
     call: grpc.ServerUnaryCall<FieldResolveRequest>,
     callback: grpc.sendUnaryData<FieldResolveResponse>,
   ): Promise<void> {
-    try {
-      const handler = await getHandler<FieldResolveInput, FieldResolveOutput>(call.request);
-      const response = await fieldResolve(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new FieldResolveResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    return this.executeUserHandler(call, callback, FieldResolveResponse, fieldResolve);
   }
 
   public async interfaceResolveType(
     call: grpc.ServerUnaryCall<InterfaceResolveTypeRequest>,
     callback: grpc.sendUnaryData<InterfaceResolveTypeResponse>,
   ): Promise<void> {
-    try {
-      const handler = await getHandler<InterfaceResolveTypeInput, InterfaceResolveTypeOutput>(call.request);
-      const response = await interfaceResolveType(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new InterfaceResolveTypeResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    return this.executeUserHandler(call, callback, InterfaceResolveTypeResponse, interfaceResolveType);
   }
 
   public async setSecrets(
     call: grpc.ServerUnaryCall<SetSecretsRequest>,
     callback: grpc.sendUnaryData<SetSecretsResponse>,
   ): Promise<void> {
-    try {
-      const response = await setSecrets(
-        call.request,
-        async (secrets): Promise<SetSecretsOutput> => {
-          Object.keys(secrets.secrets).forEach((k) => {
-            process.env[k] = secrets.secrets[k];
-          });
-          return;
-        },
-      );
-      callback(null, response);
-    } catch (e) {
-      const response = new SetSecretsResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    callback(null, await setSecrets(call.request, setSecretsEnvironment));
   }
 
   public async scalarParse(
     call: grpc.ServerUnaryCall<ScalarParseRequest>,
     callback: grpc.sendUnaryData<ScalarParseResponse>,
   ): Promise<void> {
-    try {
-      const handler = await getHandler<ScalarParseInput, ScalarParseOutput>(call.request);
-      const response = await scalarParse(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new ScalarParseResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    return this.executeUserHandler(call, callback, ScalarParseResponse, scalarParse);
   }
 
   public async scalarSerialize(
     call: grpc.ServerUnaryCall<ScalarSerializeRequest>,
     callback: grpc.sendUnaryData<ScalarSerializeResponse>,
   ): Promise<void> {
-    try {
-      const handler = await getHandler<ScalarSerializeInput, ScalarSerializeOutput>(call.request);
-      const response = await scalarSerialize(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new ScalarSerializeResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    return this.executeUserHandler(call, callback, ScalarSerializeResponse, scalarSerialize);
   }
 
   public async unionResolveType(
     call: grpc.ServerUnaryCall<UnionResolveTypeRequest>,
     callback: grpc.sendUnaryData<UnionResolveTypeResponse>,
   ): Promise<void> {
-    try {
-      const handler = await getHandler<UnionResolveTypeInput, UnionResolveTypeOutput>(call.request);
-      const response = await unionResolveType(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new UnionResolveTypeResponse();
-      doError(e, response);
-      callback(null, response);
-    }
+    return this.executeUserHandler(call, callback, UnionResolveTypeResponse, unionResolveType);
   }
 
-  public setupIO(): [typeof process.stdout.write, typeof process.stderr.write] {
-    const oldIO = this._hijackIO();
-    this._hijackConsole();
-    return oldIO;
+  public setupIO(): () => void {
+    const [stdoutWrite, stderrWrite] = this._hijackIO();
+    const oldConsole = this._hijackConsole();
+    return (): void => {
+      oldConsole();
+      process.stderr.write = stderrWrite;
+      process.stdout.write = stdoutWrite;
+      this.stdoutStreams.forEach((v) => v.end());
+      this.stderrStreams.forEach((v) => v.end());
+    };
   }
 
   public start(): void {
     // go-plugin does not read stdout
     // hijack io and send it through buffer
-    const [stdoutWrite, stderrWrite] = this.setupIO();
+    const oldWrite = process.stderr.write;
+    const cleanup = this.setupIO();
     try {
       this.server.start();
     } catch (e) {
       if ('message' in e && typeof e.message === 'string') {
-        stderrWrite.call(process.stderr, e.message);
+        oldWrite.call(process.stderr, e.message);
       }
     } finally {
-      this.closeStreams([stdoutWrite, stderrWrite]);
+      cleanup();
     }
   }
 
@@ -284,26 +245,44 @@ export class Server {
       }),
     );
   }
-
-  private wrap<T, U extends Array<unknown>, V>(
-    srv: Server,
-    fn: (call: T, callback: (...args: U) => V) => void,
-  ): (call: T, callback: (...args: U) => V) => void {
+  private profileFunction<
+    T extends {
+      request: WithFunction;
+    },
+    U extends Array<unknown>,
+    V
+  >(call: T, callback: (...args: U) => V, boundFn: (call: T, callback: (...args: U) => V) => void): void {
+    const profiler = new Profiler({ enabled: !!this.serverOpts.enableProfiling });
+    profiler.start();
+    boundFn(
+      call,
+      (...args: U): V => {
+        const r = callback(...args);
+        const report = profiler.report(call && (call as { request?: WithFunction }).request);
+        if (report) {
+          console.error(report);
+        }
+        return r;
+      },
+    );
+  }
+  private wrap<
+    T extends
+      | {
+          request: WithFunction;
+        }
+      | Writable
+      | grpc.ServerUnaryCall<SetSecretsRequest>,
+    U extends Array<unknown>,
+    V
+  >(srv: Server, fn: (call: T, callback: (...args: U) => V) => void): (call: T, callback: (...args: U) => V) => void {
     const boundFn = fn.bind(srv);
     return (call: T, callback: (...args: U) => V): void => {
-      const profiler = new Profiler({ enabled: !!this.serverOpts.enableProfiling });
-      profiler.start();
-      boundFn(
-        call,
-        (...args: U): V => {
-          const r = callback(...args);
-          const report = profiler.report(call && (call as { request?: WithFunction }).request);
-          if (report) {
-            console.error(report);
-          }
-          return r;
-        },
-      );
+      if (isCallRequestWithFunction(call)) {
+        return this.profileFunction(call, callback, boundFn);
+      } else {
+        boundFn(call, callback);
+      }
     };
   }
 
@@ -369,28 +348,34 @@ export class Server {
     return [oldStdout, oldStderr];
   }
 
-  public closeStreams([stdoutWrite, stderrWrite]: [typeof process.stdout.write, typeof process.stderr.write]): void {
-    process.stderr.write = stderrWrite;
-    process.stdout.write = stdoutWrite;
-    this.stdoutStreams.forEach((v) => v.end());
-    this.stderrStreams.forEach((v) => v.end());
-  }
-
-  private _hijackConsole(): void {
-    console.log = ((oldLog) => (msg?: unknown, ...params: unknown[]): void => {
-      oldLog('[INFO]' + msg, ...params);
-    })(console.log);
-    console.info = ((oldInfo) => (msg?: unknown, ...params: unknown[]): void => {
-      oldInfo('[INFO]' + msg, ...params);
-    })(console.info);
-    console.debug = ((oldDebug) => (msg?: unknown, ...params: unknown[]): void => {
-      oldDebug('[DEBUG]' + msg, ...params);
-    })(console.debug);
-    console.warn = ((oldWarn) => (msg?: unknown, ...params: unknown[]): void => {
-      oldWarn('[WARN]' + msg, ...params);
-    })(console.warn);
-    console.error = ((oldError) => (msg?: unknown, ...params: unknown[]): void => {
-      oldError('[ERROR]' + msg, ...params);
-    })(console.error);
+  private _hijackConsole(): () => void {
+    const newConsole = new Console(process.stdout, process.stderr);
+    const oldLog = console.log;
+    console.log = (() => (msg?: unknown, ...params: unknown[]): void => {
+      newConsole.log('[INFO]' + msg, ...params);
+    })();
+    const oldInfo = console.info;
+    console.info = (() => (msg?: unknown, ...params: unknown[]): void => {
+      newConsole.info('[INFO]' + msg, ...params);
+    })();
+    const oldDebug = console.debug;
+    console.debug = (() => (msg?: unknown, ...params: unknown[]): void => {
+      newConsole.debug('[DEBUG]' + msg, ...params);
+    })();
+    const oldWarn = console.warn;
+    console.warn = (() => (msg?: unknown, ...params: unknown[]): void => {
+      newConsole.warn('[WARN]' + msg, ...params);
+    })();
+    const oldError = console.error;
+    console.error = (() => (msg?: unknown, ...params: unknown[]): void => {
+      newConsole.error('[ERROR]' + msg, ...params);
+    })();
+    return (): void => {
+      console.log = oldLog;
+      console.info = oldInfo;
+      console.debug = oldDebug;
+      console.warn = oldWarn;
+      console.error = oldError;
+    };
   }
 }
