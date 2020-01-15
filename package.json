@@ -11,7 +11,7 @@
     "test": "jest",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
     "generate-proto": "protoc --js_out=import_style=commonjs,binary:./src --grpc_out=./src --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin ./proto/driver.proto && protoc --plugin=\"protoc-gen-ts=./node_modules/.bin/protoc-gen-ts\" --ts_out=\"./src\" ./proto/driver.proto",
-    "bump-stucco": "node -e 'const fetch=require(\"node-fetch\"); const fs=require(\"fs\"); fetch(\"https://stucco-release.fra1.cdn.digitaloceanspaces.com/latest/version\").then(r => r.text()).then(b => fs.writeFileSync(\"src/stucco/version.ts\", `export const version = \"${b.trim()}\"\n`))'",
+    "bump-stucco": "node -e 'const fetch=require(\"node-fetch\"); const fs=require(\"fs\"); fetch(\"https://stucco-release.fra1.cdn.digitaloceanspaces.com/latest/version\").then(r => r.text()).then(b => fs.writeFileSync(\"src/stucco/version.ts\", `export const version = '${b.trim()}'\n`))'",
     "build": "gulp"
   },
   "license": "MIT",
