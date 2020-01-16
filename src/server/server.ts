@@ -48,7 +48,15 @@ function hijackWrite(w: writeFuncType, to: writeFuncType): writeFuncType {
     third: Parameters<writeFuncType>[2],
   ): boolean => {
     to(first, second, third);
-    return w(first, second, third);
+    try {
+      return w(first, second, third);
+    } catch (e) {
+      // node@8 on macOS does not seem to handle Uint8Array for writing
+      if (e instanceof TypeError && (first as unknown) instanceof Uint8Array) {
+        const view = (first as unknown) as Uint8Array;
+        return w(Buffer.from(view), (second as unknown) as (err?: Error) => void | undefined);
+      }
+    }
   };
   return hijack as writeFuncType;
 }
