@@ -56,6 +56,7 @@ function hijackWrite(w: writeFuncType, to: writeFuncType): writeFuncType {
         const view = (first as unknown) as Uint8Array;
         return w(Buffer.from(view), (second as unknown) as (err?: Error) => void | undefined);
       }
+      throw e;
     }
   };
   return hijack as writeFuncType;
