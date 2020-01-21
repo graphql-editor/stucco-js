@@ -22,6 +22,18 @@ function handlerFunc<T, U>(name: string, mod: { [k: string]: unknown }): (x: T) 
   return mod[name] as (x: T) => Promise<U> | U;
 }
 
+const cache: {
+  [k: string]: Function;
+} = {};
+
+function cachedFunc<T, U>(fnName: string): ((x: T) => Promise<U | undefined>) | undefined {
+  const cached = cache[fnName];
+  if (cached) {
+    return cached as (x: T) => Promise<U | undefined>;
+  }
+  return;
+}
+
 export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Promise<U | undefined>> {
   if (!req.hasFunction()) {
     throw new Error('missing function');
@@ -31,8 +43,13 @@ export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Pro
     throw new Error(`function name is empty`);
   }
   const fnName = fn.getName();
+  const cached = cachedFunc<T, U>(fnName);
+  if (cached) {
+    return cached;
+  }
   const ext = extname(fnName) !== '.js' ? extname(fnName) : '';
   const mod = await import(`${process.cwd()}/${fnName.slice(0, fnName.length - ext.length)}`);
   const handler = handlerFunc<T, U>(ext.slice(1), mod);
-  return (x: T): Promise<U> => Promise.resolve(handler(x));
+  cache[fnName] = (x: T): Promise<U> => Promise.resolve(handler(x));
+  return cachedFunc<T, U>(fnName);
 }

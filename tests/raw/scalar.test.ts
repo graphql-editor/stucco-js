@@ -7,12 +7,12 @@ import {
   ScalarSerializeResponse,
   ScalarSerializeRequest,
 } from '../../src/proto/driver_pb';
-import { scalarParseHandler, scalarSerializeHandler } from '../../src/raw/scalar';
 describe('scalar', () => {
   beforeEach(() => {
     jest.resetModules();
   });
   it('parse handler checks content type', async () => {
+    const { scalarParseHandler } = await import('../../src/raw/scalar');
     const data: Array<{
       contentType: string;
       expectedErrorMessage: string;
@@ -45,6 +45,7 @@ describe('scalar', () => {
     );
   });
   it('parse handler calls handler', async () => {
+    const { scalarParseHandler } = await import('../../src/raw/scalar');
     const req = new ScalarParseRequest();
     const func = new Function();
     func.setName('function');
@@ -69,6 +70,7 @@ describe('scalar', () => {
     expect(handler).toHaveBeenCalledTimes(1);
   });
   it('serialize handler checks content type', async () => {
+    const { scalarSerializeHandler } = await import('../../src/raw/scalar');
     const data: Array<{
       contentType: string;
       expectedErrorMessage: string;
@@ -104,6 +106,7 @@ describe('scalar', () => {
     );
   });
   it('serialize handler calls handler', async () => {
+    const { scalarSerializeHandler } = await import('../../src/raw/scalar');
     const req = new ScalarSerializeRequest();
     const func = new Function();
     func.setName('function');
