@@ -6,7 +6,7 @@
         "rootDir": "./src",
         "sourceMap": true,
         "inlineSources": true,
-        "declaration": false,
+        "declaration": true,
         "module": "commonjs",
         "esModuleInterop": true,
         "resolveJsonModule": true,
