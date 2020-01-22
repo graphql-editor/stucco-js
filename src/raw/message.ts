@@ -88,3 +88,46 @@ export function getMessageType(mime?: MIME): MessageType | undefined {
   }
   return messageType;
 }
+
+export function messageTypeToMime(mime: MessageType): string {
+  let messageType = protobufContentType + ';message=';
+  switch (mime) {
+    case MessageType.FIELD_RESOLVE_REQUEST:
+      messageType += 'fieldresolverequest';
+      break;
+    case MessageType.FIELD_RESOLVE_RESPONSE:
+      messageType += 'fieldresolveresponse';
+      break;
+    case MessageType.INTERFACE_RESOLVE_TYPE_REQUEST:
+      messageType += 'interfaceresolvetyperequest';
+      break;
+    case MessageType.INTERFACE_RESOLVE_TYPE_RESPONSE:
+      messageType += 'interfaceresolvetyperesponse';
+      break;
+    case MessageType.SET_SECRETS_REQUEST:
+      messageType += 'setsecretsrequest';
+      break;
+    case MessageType.SET_SECRETS_RESPONSE:
+      messageType += 'setsecretsresponse';
+      break;
+    case MessageType.SCALAR_PARSE_REQUEST:
+      messageType += 'scalarparserequest';
+      break;
+    case MessageType.SCALAR_PARSE_RESPONSE:
+      messageType += 'scalarparseresponse';
+      break;
+    case MessageType.SCALAR_SERIALIZE_REQUEST:
+      messageType += 'scalarserializerequest';
+      break;
+    case MessageType.SCALAR_SERIALIZE_RESPONSE:
+      messageType += 'scalarserializeresponse';
+      break;
+    case MessageType.UNION_RESOLVE_TYPE_REQUEST:
+      messageType += 'unionresolvetyperequest';
+      break;
+    case MessageType.UNION_RESOLVE_TYPE_RESPONSE:
+      messageType += 'unionresolvetyperesponse';
+      break;
+  }
+  return messageType;
+}

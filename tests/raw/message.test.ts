@@ -1,4 +1,4 @@
-import { parseMIME, getMessageType, MessageType } from '../../src/raw/message';
+import { parseMIME, getMessageType, MessageType, messageTypeToMime } from '../../src/raw/message';
 
 describe('mime', () => {
   it('parsed', () => {
@@ -118,6 +118,68 @@ describe('message type', () => {
     });
     it('returns correct enum for UnionResolveTypeResponse', () => {
       expect(getMessageType(mimeFor('UnionResolveTypeResponse'))).toEqual(MessageType.UNION_RESOLVE_TYPE_RESPONSE);
+    });
+  });
+  describe('to mime', () => {
+    it('FieldResolveRequest message type', () => {
+      expect(messageTypeToMime(MessageType.FIELD_RESOLVE_REQUEST)).toEqual(
+        'application/x-protobuf;message=fieldresolverequest',
+      );
+    });
+    it('FieldResolveResponse message type', () => {
+      expect(messageTypeToMime(MessageType.FIELD_RESOLVE_RESPONSE)).toEqual(
+        'application/x-protobuf;message=fieldresolveresponse',
+      );
+    });
+    it('InterfaceResolveTypeRequest message type', () => {
+      expect(messageTypeToMime(MessageType.INTERFACE_RESOLVE_TYPE_REQUEST)).toEqual(
+        'application/x-protobuf;message=interfaceresolvetyperequest',
+      );
+    });
+    it('InterfaceResolveTypeResponse message type', () => {
+      expect(messageTypeToMime(MessageType.INTERFACE_RESOLVE_TYPE_RESPONSE)).toEqual(
+        'application/x-protobuf;message=interfaceresolvetyperesponse',
+      );
+    });
+    it('SetSecretsRequest message type', () => {
+      expect(messageTypeToMime(MessageType.SET_SECRETS_REQUEST)).toEqual(
+        'application/x-protobuf;message=setsecretsrequest',
+      );
+    });
+    it('SetSecretsResponse message type', () => {
+      expect(messageTypeToMime(MessageType.SET_SECRETS_RESPONSE)).toEqual(
+        'application/x-protobuf;message=setsecretsresponse',
+      );
+    });
+    it('ScalarParseRequest message type', () => {
+      expect(messageTypeToMime(MessageType.SCALAR_PARSE_REQUEST)).toEqual(
+        'application/x-protobuf;message=scalarparserequest',
+      );
+    });
+    it('ScalarParseResponse message type', () => {
+      expect(messageTypeToMime(MessageType.SCALAR_PARSE_RESPONSE)).toEqual(
+        'application/x-protobuf;message=scalarparseresponse',
+      );
+    });
+    it('ScalarSerializeRequest message type', () => {
+      expect(messageTypeToMime(MessageType.SCALAR_SERIALIZE_REQUEST)).toEqual(
+        'application/x-protobuf;message=scalarserializerequest',
+      );
+    });
+    it('ScalarSerializeResponse message type', () => {
+      expect(messageTypeToMime(MessageType.SCALAR_SERIALIZE_RESPONSE)).toEqual(
+        'application/x-protobuf;message=scalarserializeresponse',
+      );
+    });
+    it('UnionResolveTypeRequest message type', () => {
+      expect(messageTypeToMime(MessageType.UNION_RESOLVE_TYPE_REQUEST)).toEqual(
+        'application/x-protobuf;message=unionresolvetyperequest',
+      );
+    });
+    it('UnionResolveTypeResponse message type', () => {
+      expect(messageTypeToMime(MessageType.UNION_RESOLVE_TYPE_RESPONSE)).toEqual(
+        'application/x-protobuf;message=unionresolvetyperesponse',
+      );
     });
   });
 });
