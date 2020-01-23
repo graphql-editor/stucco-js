@@ -52,7 +52,7 @@ function hijackWrite(w: writeFuncType, to: writeFuncType): writeFuncType {
       return w(first, second, third);
     } catch (e) {
       // node@8 on macOS does not seem to handle Uint8Array for writing
-      if (e instanceof TypeError && (first as unknown) instanceof Uint8Array) {
+      if ((first as unknown) instanceof Uint8Array && process.version.startsWith('v8.')) {
         const view = (first as unknown) as Uint8Array;
         return w(Buffer.from(view), (second as unknown) as (err?: Error) => void | undefined);
       }
