@@ -6,7 +6,12 @@ describe('ConsoleHook', () => {
     const traceLines = trace.split('\n');
     expect(traceLines[0]).toEqual(firstLine);
     expect(traceLines[1].split(':').length).toEqual(3);
-    expect(traceLines[1].split(':')[0]).toEqual(`    at Object.<anonymous> (${__filename}`);
+    expect(
+      traceLines[1]
+        .split(':')[0]
+        .trim()
+        .split(' ')[2],
+    ).toEqual('(' + __filename);
   }
   it('creates and deletes a monkey patch', async () => {
     const { ConsoleHook } = await import('../../src/server/hook_console');
