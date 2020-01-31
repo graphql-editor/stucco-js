@@ -5,7 +5,9 @@ describe('ConsoleHook', () => {
   function traceExpect(trace: string, firstLine = 'Trace: trace'): void {
     const traceLines = trace.split('\n');
     expect(traceLines[0]).toEqual(firstLine);
-    expect(traceLines[1]).toMatch(new RegExp('^.* \\(' + __filename + ':[1-9][0-9]*:[1-9][0-9]*\\)$'));
+    expect(traceLines[1]).toMatch(
+      new RegExp('^.* \\(' + __filename.split('\\').join('\\\\') + ':[1-9][0-9]*:[1-9][0-9]*\\)$'),
+    );
   }
   it('creates and deletes a monkey patch', async () => {
     const { ConsoleHook } = await import('../../src/server/hook_console');
