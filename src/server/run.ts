@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+import { StreamHook } from './hook_stream';
+
+const stdout = new StreamHook(process.stdout);
+const stderr = new StreamHook(process.stderr);
+
+import { ConsoleHook } from './hook_console';
+
+const consoleHook = new ConsoleHook(console);
 
 import { Server } from './server';
 
@@ -40,13 +48,21 @@ export const runPluginWith = (server: StoppableServer) => {
 };
 
 export const run = (opts?: RunOptions): void => {
-  return runPluginWith(new Server(opts))(opts);
+  const serverOptions = {
+    ...opts,
+    stdoutHook: stdout,
+    stderrHook: stderr,
+    consoleHook: consoleHook,
+  };
+  return runPluginWith(new Server(serverOptions))(opts);
 };
 
 if (require.main === module) {
   try {
     run({ enableProfiling: process.env.STUCCO_JS_PROFILE === '1' || process.env.STUCCO_JS_PROFILE === 'true' });
   } catch (e) {
+    stderr.unhook();
+    consoleHook.unhook();
     console.error(e);
   }
 }

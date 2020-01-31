@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
-import { Console } from 'console';
 import * as grpc from 'grpc';
 import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-ts-health-check';
 import { getHandler } from '../handler';
@@ -29,7 +28,6 @@ import {
   SetSecretsRequest,
   SetSecretsResponse,
 } from '../proto/driver_pb';
-import { DevNull } from './devnull';
 import { Writable } from 'stream';
 import { Profiler } from './profiler';
 import { setSecretsEnvironment } from '../raw/set_secrets';
@@ -40,27 +38,6 @@ export interface WithFunction {
 }
 
 type writeFuncType = typeof process.stdout.write;
-
-function hijackWrite(w: writeFuncType, to: writeFuncType): writeFuncType {
-  const hijack = (
-    first: Parameters<writeFuncType>[0],
-    second: Parameters<writeFuncType>[1],
-    third: Parameters<writeFuncType>[2],
-  ): boolean => {
-    to(first, second, third);
-    try {
-      return w(first, second, third);
-    } catch (e) {
-      // node@8 on macOS does not seem to handle Uint8Array for writing
-      if ((first as unknown) instanceof Uint8Array && process.version.startsWith('v8.')) {
-        const view = (first as unknown) as Uint8Array;
-        return w(Buffer.from(view), (second as unknown) as (err?: Error) => void | undefined);
-      }
-      throw e;
-    }
-  };
-  return hijack as writeFuncType;
-}
 
 function isCallRequestWithFunction(
   v: unknown,
@@ -86,6 +63,9 @@ interface ServerOptions {
   checkClientCertificate?: boolean;
   grpcServerOpts?: object;
   server?: GRPCServer;
+  stdoutHook?: StreamHook;
+  stderrHook?: StreamHook;
+  consoleHook?: ConsoleHook;
 }
 
 interface GRPCServer {
@@ -103,10 +83,26 @@ function doError(e: unknown, v: WithError): void {
   v.setError(makeProtoError(e));
 }
 
+interface StreamHook {
+  on(event: 'data', listener: (chunk: unknown) => void): StreamHook;
+  on(event: 'end', listener: () => void): StreamHook;
+  removeListener(event: 'data', listener: (chunk: unknown) => void): StreamHook;
+  hook(): void;
+  unhook(): void;
+}
+
+interface ConsoleHook {
+  hook(): void;
+  unhook(): void;
+}
+
 export class Server {
   private server: GRPCServer;
   private stdoutStreams: Writable[];
   private stderrStreams: Writable[];
+  private stdoutHook?: StreamHook;
+  private stderrHook?: StreamHook;
+  private consoleHook?: ConsoleHook;
   constructor(private serverOpts: ServerOptions = {}) {
     const healthCheckStatusMap = {
       plugin: HealthCheckResponse.ServingStatus.SERVING,
@@ -127,6 +123,76 @@ export class Server {
     });
     this.stdoutStreams = [];
     this.stderrStreams = [];
+
+    // stdio hooks
+    this.stdoutHook = serverOpts.stdoutHook;
+    this.stderrHook = serverOpts.stderrHook;
+    this.consoleHook = serverOpts.consoleHook;
+    this.addListener((data: Buffer): void => {
+      this.writeToGRPCStdout(data);
+    }, this.stdoutHook);
+    this.addListener((data: Buffer): void => {
+      this.writeToGRPCStderr(data);
+    }, this.stderrHook);
+  }
+
+  private addListener(listener: (data: Buffer) => void, hook?: StreamHook): void {
+    if (!hook) {
+      return;
+    }
+    hook.on('data', listener);
+    hook.on('end', () => {
+      hook.removeListener('data', listener);
+    });
+  }
+
+  private writeToGRPCStdout(data: Buffer): void {
+    const msg = new ByteStream();
+    msg.setData(Uint8Array.from(data));
+    this.stdoutStreams.forEach((v) => {
+      v.write(msg, (e) => {
+        if (e) {
+          v.end();
+          this.stdoutStreams = this.stdoutStreams.filter((stream) => stream !== v);
+        }
+      });
+    });
+  }
+  private writeToGRPCStderr(data: Buffer): void {
+    const msg = new ByteStream();
+    msg.setData(Uint8Array.from(data));
+    this.stderrStreams.forEach((v) => {
+      v.write(msg, (e) => {
+        if (e) {
+          v.end();
+          this.stderrStreams = this.stderrStreams.filter((stream) => stream !== v);
+        }
+      });
+    });
+  }
+
+  private hookIO(): void {
+    if (this.stdoutHook) {
+      this.stdoutHook.hook();
+    }
+    if (this.stderrHook) {
+      this.stderrHook.hook();
+    }
+    if (this.consoleHook) {
+      this.consoleHook.hook();
+    }
+  }
+
+  private unhookIO(): void {
+    if (this.stdoutHook) {
+      this.stdoutHook.unhook();
+    }
+    if (this.stderrHook) {
+      this.stderrHook.unhook();
+    }
+    if (this.consoleHook) {
+      this.consoleHook.unhook();
+    }
   }
 
   private async executeUserHandler<T extends WithFunction, U extends WithError, V, W>(
@@ -137,6 +203,7 @@ export class Server {
     },
     fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
   ): Promise<void> {
+    this.hookIO();
     try {
       const handler = await getHandler<V, W>(call.request);
       const response = await fn(call.request, handler);
@@ -146,6 +213,7 @@ export class Server {
       doError(e, response);
       callback(null, response);
     }
+    this.unhookIO();
   }
 
   public async fieldResolve(
@@ -190,31 +258,11 @@ export class Server {
     return this.executeUserHandler(call, callback, UnionResolveTypeResponse, unionResolveType);
   }
 
-  public setupIO(): () => void {
-    const [stdoutWrite, stderrWrite] = this._hijackIO();
-    const oldConsole = this._hijackConsole();
-    return (): void => {
-      oldConsole();
-      process.stderr.write = stderrWrite;
-      process.stdout.write = stdoutWrite;
-      this.stdoutStreams.forEach((v) => v.end());
-      this.stderrStreams.forEach((v) => v.end());
-    };
-  }
-
   public start(): void {
-    // go-plugin does not read stdout
-    // hijack io and send it through buffer
-    const oldWrite = process.stderr.write;
-    const cleanup = this.setupIO();
     try {
       this.server.start();
     } catch (e) {
-      if ('message' in e && typeof e.message === 'string') {
-        oldWrite.call(process.stderr, e.message);
-      }
-    } finally {
-      cleanup();
+      console.error(e);
     }
   }
 
@@ -301,90 +349,5 @@ export class Server {
 
   private stderr(call: Writable): void {
     this.stderrStreams.push(call);
-  }
-
-  private _hijackIO(): [typeof process.stdout.write, typeof process.stderr.write] {
-    const oldStdout = process.stdout.write;
-    const oldStderr = process.stderr.write;
-    const writeStdToGRPC = (data: string | Buffer | Uint8Array): boolean => {
-      const msg = new ByteStream();
-      if (typeof data === 'string') {
-        data = Buffer.from(data);
-      }
-      if (Buffer.isBuffer(data)) {
-        data = Uint8Array.from(data);
-      }
-      msg.setData(data);
-      this.stdoutStreams.forEach((v) => {
-        v.write(msg, (e) => {
-          if (e) {
-            v.end();
-            this.stdoutStreams = this.stdoutStreams.filter((stream) => stream !== v);
-          }
-        });
-      });
-      return true;
-    };
-    process.stdout.write = hijackWrite(oldStdout.bind(process.stdout), writeStdToGRPC.bind(this));
-    const writeStderrToGRPC = (data: string | Buffer | Uint8Array): boolean => {
-      const msg = new ByteStream();
-      if (typeof data === 'string') {
-        data = Buffer.from(data);
-      }
-      if (Buffer.isBuffer(data)) {
-        data = Uint8Array.from(data);
-      }
-      msg.setData(data);
-      this.stderrStreams.forEach((v) => {
-        v.write(msg, (e) => {
-          if (e) {
-            v.end();
-            this.stderrStreams = this.stderrStreams.filter((stream) => stream !== v);
-          }
-        });
-      });
-      return true;
-    };
-    const { pluginMode = true } = this.serverOpts;
-    if (pluginMode) {
-      // stderr to pseudo null device, since we're already sending
-      // stderr through grpc. No need to write it again through pipe
-      const nullErr = new DevNull();
-      process.stderr.write = hijackWrite(nullErr.write.bind(process.stderr), writeStderrToGRPC.bind(this));
-    } else {
-      process.stderr.write = hijackWrite(oldStderr.bind(process.stderr.write), writeStderrToGRPC.bind(this));
-    }
-    return [oldStdout, oldStderr];
-  }
-
-  private _hijackConsole(): () => void {
-    const newConsole = new Console(process.stdout, process.stderr);
-    const oldLog = console.log;
-    console.log = (() => (msg?: unknown, ...params: unknown[]): void => {
-      newConsole.log('[INFO]' + msg, ...params);
-    })();
-    const oldInfo = console.info;
-    console.info = (() => (msg?: unknown, ...params: unknown[]): void => {
-      newConsole.info('[INFO]' + msg, ...params);
-    })();
-    const oldDebug = console.debug;
-    console.debug = (() => (msg?: unknown, ...params: unknown[]): void => {
-      newConsole.debug('[DEBUG]' + msg, ...params);
-    })();
-    const oldWarn = console.warn;
-    console.warn = (() => (msg?: unknown, ...params: unknown[]): void => {
-      newConsole.warn('[WARN]' + msg, ...params);
-    })();
-    const oldError = console.error;
-    console.error = (() => (msg?: unknown, ...params: unknown[]): void => {
-      newConsole.error('[ERROR]' + msg, ...params);
-    })();
-    return (): void => {
-      console.log = oldLog;
-      console.info = oldInfo;
-      console.debug = oldDebug;
-      console.warn = oldWarn;
-      console.error = oldError;
-    };
   }
 }
