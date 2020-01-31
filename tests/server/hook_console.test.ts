@@ -5,7 +5,6 @@ describe('ConsoleHook', () => {
   function traceExpect(trace: string, firstLine = 'Trace: trace'): void {
     const traceLines = trace.split('\n');
     expect(traceLines[0]).toEqual(firstLine);
-    expect(traceLines[1].split(':').length).toEqual(3);
     expect(
       traceLines[1]
         .split(':')[0]
