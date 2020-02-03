@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import BinWrapper from 'bin-wrapper';
-import { spawnSync } from 'child_process';
+import { spawn } from 'child_process';
 import * as path from 'path';
 import { version } from './version';
 
@@ -21,6 +21,12 @@ export const stucco = async (): Promise<BinWrapper> => {
 if (require.main === module) {
   (async (): Promise<void> => {
     const bin = await stucco();
-    spawnSync(bin.path(), [], { stdio: [process.stdin, process.stdout, process.stderr] });
+    const child = spawn(bin.path(), [], { stdio: [process.stdin, process.stdout, process.stderr] });
+    process.on('SIGTERM', () => {
+      child.kill();
+    });
+    process.on('SIGINT', () => {
+      child.kill();
+    });
   })().catch((e) => console.error(e));
 }

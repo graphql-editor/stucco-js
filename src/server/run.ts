@@ -40,8 +40,10 @@ export const runPluginWith = (server: StoppableServer) => {
       const stopServer = (): void => {
         server.stop().catch((e) => console.error(e));
         process.removeListener('SIGINT', stopServer);
+        process.removeListener('SIGTERM', stopServer);
       };
       process.on('SIGINT', stopServer);
+      process.on('SIGTERM', stopServer);
       server.serve();
     }
   };
