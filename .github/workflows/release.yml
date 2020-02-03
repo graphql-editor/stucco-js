@@ -30,6 +30,11 @@ jobs:
       run: npm run lint
     - name: run tests
       run: npm run test
+    - name: install for e2e plugin integration
+      working-directory: ./e2e/server/testdata
+      run: npm i
+    - name: run e2e tests for plugin integration
+      run: npm run test:e2e
   release:
     needs: build
     runs-on: ubuntu-latest

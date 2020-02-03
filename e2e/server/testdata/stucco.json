@@ -1,0 +1,73 @@
+{
+  "resolvers": {
+    "Hero.sidekick": {
+      "resolve": {
+        "name": "sidekick.js"
+      }
+    },
+    "Sidekick.hero": {
+      "resolve": {
+        "name": "hero.js"
+      }
+    },
+    "Query.hero": {
+      "resolve": {
+        "name": "hero.js"
+      }
+    },
+    "Query.sidekick": {
+      "resolve": {
+        "name": "sidekick.js"
+      }
+    },
+    "Query.search": {
+      "resolve": {
+        "name": "search.js"
+      }
+    },
+    "Query.battles": {
+      "resolve": {
+        "name": "battles.js"
+      }
+    },
+    "Query.findBattles": {
+      "resolve": {
+        "name": "battles.js"
+      }
+    },
+    "Query.getSecretKey": {
+      "resolve": {
+        "name": "get_secret_key.js"
+      }
+    }
+  },
+  "interfaces": {
+    "Named": {
+      "resolveType": {
+        "name": "named_interface.js"
+      }
+    }
+  },
+  "unions": {
+    "Search": {
+      "resolveType": {
+        "name": "search_union.js"
+      }
+    }
+  },
+  "scalars": {
+    "Date": {
+      "parse": {
+        "name": "date_parse.js"
+      },
+      "serialize": {
+        "name": "date_serialize.js"
+      }
+    }
+  },
+  "secrets": {
+    "secrets": {
+      "KEY": "VALUE"
+    }
+  }
+}

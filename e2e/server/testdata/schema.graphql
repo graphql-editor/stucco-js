@@ -1,0 +1,43 @@
+scalar Date
+
+interface Named {
+    name: String!
+}
+
+type Hero implements Named {
+    name: String!
+    sidekick: Sidekick
+}
+
+type Sidekick implements Named {
+    name: String!
+    hero: Hero
+}
+
+type Vilian implements Named {
+    name: String!
+}
+
+union Search = Hero | Sidekick | Vilian
+
+type Team {
+    members: [Named!]
+}
+
+type Battle {
+    participants: [Team!]
+    when: Date
+}
+
+type Query {
+    hero(name: String!): Hero
+    sidekick(name: String!): Sidekick
+    search(name: String!): Search
+    battles: [Battle!]
+    findBattles(when: Date!): [Battle!]
+    getSecretKey: String!
+}
+
+schema {
+    query: Query
+}

@@ -1,0 +1,11 @@
+{
+  "name": "testdata",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "stucco"
+  },
+  "dependencies": {
+    "stucco-js": "file:../../.."
+  }
+}
