@@ -52,7 +52,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: ~/node_modules
-        key: ubuntu-latest-8-node-${{ hashFiles('**/package.json') }}
+        key: ubuntu-latest-8-node-${{ hashFiles('package.json') }}
         restore-keys: |
           ubuntu-latest-8-node-
     - name: install deps

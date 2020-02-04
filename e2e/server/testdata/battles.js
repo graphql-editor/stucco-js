@@ -1,6 +1,6 @@
 const battles = [
   {
-    when: new Date(2020, 1, 1, 0, 1, 0, 0).toString(),
+    when: new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString(),
     participants: [
       {
         members: [

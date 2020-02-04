@@ -1,31 +1,48 @@
-import { exec, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, execSync } from 'child_process';
 import fetch from 'node-fetch';
 import { join } from 'path';
+
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+const retry = <T>(fn: () => Promise<T>, retries: number, timeout: number): Promise<T> =>
+  retries > 1
+    ? fn().catch(
+        () =>
+          new Promise<T>((resolve, reject) =>
+            setTimeout(
+              () =>
+                retry(fn, retries - 1, timeout)
+                  .then((r: T) => resolve(r))
+                  .catch((e: unknown) => reject(e)),
+              timeout,
+            ),
+          ),
+      )
+    : fn();
 
 describe('test plugin integration', () => {
   let stuccoProccess: ChildProcess;
   beforeAll(async () => {
-    stuccoProccess = exec('node node_modules/.bin/stucco', {
-      cwd: join(process.cwd(), 'e2e/server/testdata'),
-    });
-    for (let i = 0; i < 5; i++) {
-      try {
-        await fetch('http://localhost:8080/graphql', {
+    // Use run.js directly to make sure process is terminated on windows
+    const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
+    stuccoProccess = spawn(npm, ['run', 'start'], { cwd, env: process.env, stdio: 'inherit' });
+    await retry(
+      async () =>
+        fetch('http://localhost:8080/graphql', {
           method: 'OPTIONS',
-        });
-      } catch (e) {
-        if (i === 4) {
-          throw e;
-        }
-        await new Promise((resolve) => {
-          setTimeout(() => resolve(), 5000);
-        });
-      }
-    }
+          timeout: 1000,
+        }),
+      5,
+      2000,
+    );
   }, 30000);
   afterAll(() => {
     if (stuccoProccess) {
-      stuccoProccess.kill();
+      if (process.platform === 'win32') {
+        execSync('taskkill /pid ' + stuccoProccess.pid + ' /T /F');
+      } else {
+        stuccoProccess.kill();
+      }
     }
   });
   it('returns hero', async () => {
@@ -164,7 +181,7 @@ describe('test plugin integration', () => {
                 ],
               },
             ],
-            when: 'serialized date: ' + new Date(2020, 1, 1, 0, 1, 0, 0).toString(),
+            when: 'serialized date: ' + new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString(),
           },
         ],
       },
@@ -175,7 +192,7 @@ describe('test plugin integration', () => {
       body: JSON.stringify({
         query:
           '{ findBattles(when: "' +
-          new Date(2020, 1, 1, 0, 1, 0, 0).toString() +
+          new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString() +
           '") { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
       }),
       method: 'POST',
@@ -212,7 +229,7 @@ describe('test plugin integration', () => {
                 ],
               },
             ],
-            when: 'serialized date: ' + new Date(2020, 1, 1, 0, 1, 0, 0).toString(),
+            when: 'serialized date: ' + new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString(),
           },
         ],
       },

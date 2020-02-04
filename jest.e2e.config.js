@@ -10,5 +10,6 @@ module.exports = {
 			tsConfig: "tsconfig.json"
 		}
 	},
-	testEnvironment: 'node'
+	testEnvironment: 'node',
+	testRunner: "jest-circus/runner"
 };
