@@ -17,13 +17,16 @@ jobs:
         node-version: ${{ matrix.node }}
     - name: checkout
       uses: actions/checkout@v1
-    - name: cache deps
-      uses: actions/cache@v1
+    - name: Get npm cache directory
+      id: npm-cache
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+    - uses: actions/cache@v1
       with:
-        path: ~/node_modules
-        key: ${{ matrix.platform }}-${{ matrix.node }}-node-${{ hashFiles('**/package.json') }}
+        path: ${{ steps.npm-cache.outputs.dir }}
+        key: ${{ matrix.platform }}-node-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
-          ${{ matrix.platform }}-${{ matrix.node }}-node-
+          ${{ matrix.platform }}-node-${{ matrix.node }}
     - name: install deps
       run: npm install
     - name: run lint
@@ -37,6 +40,9 @@ jobs:
       run: npm i
     - name: run e2e tests for plugin integration
       run: npm run test:e2e
+    - name: remove symlinks breaking cache
+      run: npx rimraf ./e2e/server/testdata/node_modules
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -48,13 +54,16 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - name: checkout
       uses: actions/checkout@v1
-    - name: cache deps
-      uses: actions/cache@v1
+    - name: Get npm cache directory
+      id: npm-cache
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+    - uses: actions/cache@v1
       with:
-        path: ~/node_modules
-        key: ubuntu-latest-8-node-${{ hashFiles('package.json') }}
+        path: ${{ steps.npm-cache.outputs.dir }}
+        key: ${{ matrix.platform }}-node-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}
         restore-keys: |
-          ubuntu-latest-8-node-
+          ${{ matrix.platform }}-node-${{ matrix.node }}
     - name: install deps
       run: npm install
     - name: run build
