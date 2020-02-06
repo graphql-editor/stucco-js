@@ -34,7 +34,7 @@ jobs:
         restore-keys: |
           ${{ matrix.platform }}-node-${{ matrix.node }}
     - name: install deps
-      run: npm install
+      run: npm ci
     - name: run lint
       run: npm run lint
     - name: run tests
@@ -43,7 +43,7 @@ jobs:
       run: npm run build
     - name: install for e2e plugin integration
       working-directory: ./e2e/server/testdata
-      run: npm i
+      run: npm ci
     - name: run e2e tests for plugin integration
       run: npm run test:e2e
     - name: remove symlinks breaking cache
