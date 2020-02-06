@@ -1,3 +1,3 @@
 module.exports = (input) => {
-  return 'parsed date: '+input.value
-}
+  return 'parsed date: ' + input.value;
+};

@@ -1,3 +1,3 @@
 module.exports = () => {
-  return process.env.KEY
-}
+  return process.env.KEY;
+};

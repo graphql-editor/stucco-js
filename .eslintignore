@@ -2,4 +2,4 @@ src/proto/*
 node_modules
 lib
 coverage
-*.js
+lib/*.js

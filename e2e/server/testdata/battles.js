@@ -13,25 +13,25 @@ const battles = [
             __typename: 'Sidekick',
             name: 'Robin',
             hero: 'Batman',
-          }
-        ]
+          },
+        ],
       },
       {
         members: [
           {
             __typename: 'Vilian',
             name: 'Joker',
-          }
-        ]
-      }
+          },
+        ],
+      },
     ],
   },
-]
+];
 
 module.exports = (input) => {
-  const when = input.arguments && input.arguments.when
-  if(when) {
-    return battles.filter(battle => battle.when === when.substr('parsed date: '.length))
+  const when = input.arguments && input.arguments.when;
+  if (when) {
+    return battles.filter((battle) => battle.when === when.substr('parsed date: '.length));
   }
-  return battles
-}
+  return battles;
+};

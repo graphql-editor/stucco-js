@@ -48,6 +48,7 @@ describe('StreamHook', () => {
     expect(passthroughWrite).toHaveBeenCalledTimes(1);
     hook.hook();
     const encoding = 'encoding';
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     const cb = (): void => {};
     stream.write('hooked', encoding, cb);
     expect(nodejsStreamMockWrite).toHaveBeenLastCalledWith('hooked', encoding, cb);

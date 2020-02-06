@@ -1,3 +1,3 @@
 module.exports = (input) => {
-  return 'serialized date: '+input.value
-}
+  return 'serialized date: ' + input.value;
+};
