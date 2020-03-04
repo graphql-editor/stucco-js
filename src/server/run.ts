@@ -54,7 +54,7 @@ export const run = (opts?: RunOptions): void => {
   const grpcServerOpts = {
     ...(opts.maxMessageSize && {
       'grpc.max_send_message_length': opts.maxMessageSize,
-      'grpc.max_recieve_message_length': opts.maxMessageSize,
+      'grpc.max_receive_message_length': opts.maxMessageSize,
     }),
   };
   const serverOptions = {
