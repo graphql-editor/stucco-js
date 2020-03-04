@@ -16,6 +16,7 @@ interface StoppableServer {
 }
 
 interface RunOptions {
+  maxMessageSize?: number;
   enableProfiling?: boolean;
   version?: string;
 }
@@ -50,18 +51,32 @@ export const runPluginWith = (server: StoppableServer) => {
 };
 
 export const run = (opts?: RunOptions): void => {
+  const grpcServerOpts = {
+    ...(opts.maxMessageSize && {
+      'grpc.max_send_message_length': opts.maxMessageSize,
+      'grpc.max_recieve_message_length': opts.maxMessageSize,
+    }),
+  };
   const serverOptions = {
     ...opts,
     stdoutHook: stdout,
     stderrHook: stderr,
     consoleHook: consoleHook,
+    grpcServerOpts,
   };
   return runPluginWith(new Server(serverOptions))(opts);
 };
 
 if (require.main === module) {
   try {
-    run({ enableProfiling: process.env.STUCCO_JS_PROFILE === '1' || process.env.STUCCO_JS_PROFILE === 'true' });
+    const opts: RunOptions = {
+      enableProfiling: process.env.STUCCO_JS_PROFILE === '1' || process.env.STUCCO_JS_PROFILE === 'true',
+    };
+    const maxMessageSize = process.env.STUCCO_MAX_MESSAGE_SIZE;
+    if (maxMessageSize) {
+      opts.maxMessageSize = parseInt(maxMessageSize);
+    }
+    run(opts);
   } catch (e) {
     stderr.unhook();
     consoleHook.unhook();
