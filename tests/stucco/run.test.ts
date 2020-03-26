@@ -8,7 +8,7 @@ describe('stucco', () => {
   test('fetch correct version', async () => {
     const bin = await stucco();
     expect(
-      execFileSync(bin.path(), ['-version'])
+      execFileSync(bin.path(), ['version'])
         .toString()
         .trim(),
     ).toEqual(version);
