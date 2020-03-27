@@ -48,7 +48,9 @@ export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Pro
     return cached;
   }
   const ext = extname(fnName) !== '.js' ? extname(fnName) : '';
-  const mod = await import(`${process.cwd()}/${fnName.slice(0, fnName.length - ext.length)}`);
+  const mod = await import(
+    `${process.env.STUCCO_PROJECT_ROOT || process.cwd()}/${fnName.slice(0, fnName.length - ext.length)}`
+  );
   const handler = handlerFunc<T, U>(ext.slice(1), mod);
   cache[fnName] = (x: T): Promise<U> => Promise.resolve(handler(x));
   return cachedFunc<T, U>(fnName);
