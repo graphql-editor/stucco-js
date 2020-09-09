@@ -86,9 +86,9 @@ export interface FieldResolveInfo {
   variableValues?: Record<string, unknown>;
 }
 
-export interface FieldResolveInput<Arguments = Record<string, unknown>, Source = unknown> {
-  source?: Source;
-  arguments?: Arguments;
+export interface FieldResolveInput<Arguments = Record<string, unknown> | undefined, Source = unknown | undefined> {
+  source: Source;
+  arguments: Arguments;
   info: FieldResolveInfo;
   protocol?: Protocol;
   environment?: unknown;
