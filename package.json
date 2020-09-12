@@ -42,7 +42,7 @@
     "gulp-typescript": "^5.0.1",
     "jest": "^25.2.1",
     "jest-circus": "^25.2.1",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.1",
     "ts-jest": "^25.2.1",
