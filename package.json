@@ -19,7 +19,7 @@
   "dependencies": {
     "bin-wrapper": "^4.1.0",
     "google-protobuf": "^3.10.0",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.3",
     "grpc-ts-health-check": "^2.0.3"
   },
   "devDependencies": {
@@ -36,13 +36,13 @@
     "eslint-plugin-jest": "^23.8.2",
     "eslint-plugin-prefer-arrow": "^1.1.6",
     "eslint-plugin-prettier": "^3.1.1",
-    "grpc-tools": "^1.8.0",
+    "grpc-tools": "^1.9.1",
     "grpc_tools_node_protoc_ts": "^2.5.10",
     "gulp": "^4.0.2",
     "gulp-typescript": "^5.0.1",
     "jest": "^25.2.1",
     "jest-circus": "^25.2.1",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.1",
     "ts-jest": "^25.2.1",
