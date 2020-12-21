@@ -2,6 +2,9 @@ describe('StreamHook', () => {
   beforeEach(() => {
     jest.resetModules();
   });
+  afterEach(() => {
+    jest.resetModules();
+  });
   it('creates and deletes monkey patch', async () => {
     const passthroughWrite = jest.fn();
     const passthroughEnd = jest.fn();
