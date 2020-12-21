@@ -57,7 +57,7 @@ export const run = (opts: RunOptions = {}): void => {
       'grpc.max_receive_message_length': opts.maxMessageSize,
     }),
   };
-  const serverOptions = {
+  const serverOptions: Record<string, unknown> = {
     ...opts,
     stdoutHook: stdout,
     stderrHook: stderr,

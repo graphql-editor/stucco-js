@@ -46,16 +46,17 @@ describe('test plugin integration', () => {
     }
   });
   it('returns hero', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ hero(name: "Batman") { name sidekick { name } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ hero(name: "Batman") { name sidekick { name } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         hero: {
           name: 'Batman',
@@ -67,16 +68,17 @@ describe('test plugin integration', () => {
     });
   });
   it('returns sidekick', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ sidekick(name: "Robin") { name hero { name } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ sidekick(name: "Robin") { name hero { name } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         sidekick: {
           name: 'Robin',
@@ -88,16 +90,17 @@ describe('test plugin integration', () => {
     });
   });
   it('finds hero', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ search(name: "Batman") { ... on Hero { name } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ search(name: "Batman") { ... on Hero { name } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         search: {
           name: 'Batman',
@@ -106,16 +109,17 @@ describe('test plugin integration', () => {
     });
   });
   it('finds sidekick', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ search(name: "Robin") { ... on Sidekick { name } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ search(name: "Robin") { ... on Sidekick { name } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         search: {
           name: 'Robin',
@@ -124,16 +128,17 @@ describe('test plugin integration', () => {
     });
   });
   it('finds vilian', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ search(name: "Joker") { ... on Vilian { name } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ search(name: "Joker") { ... on Vilian { name } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         search: {
           name: 'Joker',
@@ -142,17 +147,18 @@ describe('test plugin integration', () => {
     });
   });
   it('battles', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query:
-          '{ battles { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query:
+            '{ battles { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         battles: [
           {
@@ -188,19 +194,20 @@ describe('test plugin integration', () => {
     });
   });
   it('findBattles', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query:
-          '{ findBattles(when: "' +
-          new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString() +
-          '") { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query:
+            '{ findBattles(when: "' +
+            new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString() +
+            '") { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         findBattles: [
           {
@@ -236,17 +243,18 @@ describe('test plugin integration', () => {
     });
   });
   it('search batman', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query:
-          '{ search(name: "Batman") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query:
+            '{ search(name: "Batman") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         search: {
           name: 'Batman',
@@ -258,17 +266,18 @@ describe('test plugin integration', () => {
     });
   });
   it('search robin', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query:
-          '{ search(name: "Robin") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query:
+            '{ search(name: "Robin") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         search: {
           name: 'Robin',
@@ -280,16 +289,17 @@ describe('test plugin integration', () => {
     });
   });
   it('check if secret set', async () => {
-    const response = await fetch('http://localhost:8080/graphql', {
-      body: JSON.stringify({
-        query: '{ getSecretKey }',
-      }),
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-    }).then((res) => res.json());
-    expect(response).toEqual({
+    await expect(
+      fetch('http://localhost:8080/graphql', {
+        body: JSON.stringify({
+          query: '{ getSecretKey }',
+        }),
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+      }).then((res) => res.json()),
+    ).resolves.toEqual({
       data: {
         getSecretKey: 'VALUE',
       },

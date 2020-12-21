@@ -32,17 +32,21 @@ export class StreamHook extends PassThrough {
   private hookWithCastOv1(
     fn: WriteFunc,
     arg1: string | Buffer | Uint8Array,
-    arg2: BufferEncoding,
+    arg2: string,
     arg3?: ErrorCallback,
-  ) {
+  ): ReturnType<WriteFunc> {
     if (this.hooked) {
       this.write(arg1, arg2, arg3);
     }
     return fn(arg1, arg2, arg3);
   }
 
-  private hookWithCastOv2(fn: WriteFunc, arg1: string | Buffer | Uint8Array, arg2?: ErrorCallback) {
-    const call = (fn: WriteFunc) => (arg2 ? fn(arg1, arg2) : fn(arg1));
+  private hookWithCastOv2(
+    fn: WriteFunc,
+    arg1: string | Buffer | Uint8Array,
+    arg2?: ErrorCallback,
+  ): ReturnType<WriteFunc> {
+    const call = (fn: WriteFunc): ReturnType<WriteFunc> => (arg2 ? fn(arg1, arg2) : fn(arg1));
     if (this.hooked) {
       call(this.write);
     }
@@ -52,9 +56,9 @@ export class StreamHook extends PassThrough {
   private hookWithCast(fn: WriteFunc): WriteFunc {
     return (
       arg1: string | Buffer | Uint8Array,
-      arg2?: BufferEncoding | ErrorCallback,
+      arg2?: string | ErrorCallback,
       arg3?: ErrorCallback,
-    ): boolean => {
+    ): ReturnType<WriteFunc> => {
       if (typeof arg2 === 'string') {
         return this.hookWithCastOv1(fn, arg1, arg2, arg3);
       }

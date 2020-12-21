@@ -11,5 +11,4 @@ module.exports = {
       tsconfig: 'tsconfig.json',
     },
   },
-  testRunner: 'jest-circus/runner',
 };

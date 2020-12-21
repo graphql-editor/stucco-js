@@ -8,5 +8,4 @@ module.exports = {
   globals: {
     'ts-jest': { tsconfig: 'tsconfig.json' },
   },
-  testRunner: 'jest-circus/runner',
 };
