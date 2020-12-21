@@ -1,6 +1,6 @@
 {
   "name": "stucco-js",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "bin": {
@@ -30,8 +30,8 @@
     "@typescript-eslint/eslint-plugin": "^4.10.0",
     "@typescript-eslint/eslint-plugin-tslint": "^4.10.0",
     "@typescript-eslint/parser": "^4.10.0",
-    "eslint": "^7.15.0",
-    "eslint-config-prettier": "^7.0.0",
+    "eslint": "^7.16.0",
+    "eslint-config-prettier": "^7.1.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jest": "^24.1.3",
     "eslint-plugin-prefer-arrow": "^1.2.2",
