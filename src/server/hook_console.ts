@@ -10,7 +10,11 @@ interface ConsoleLike {
   trace: typeof Console.prototype.trace;
 }
 
-function defaultTrace(data: unknown, constructorOpt: Function, ...optionalParams: unknown[]): string {
+function defaultTrace(data: unknown, ...optionalParams: unknown[]): string {
+  let constructorOpt: ((...args: unknown[]) => unknown) | undefined;
+  if (typeof optionalParams[0] === 'function') {
+    constructorOpt = optionalParams.shift() as (...args: unknown[]) => unknown;
+  }
   const traceObj: {
     name: string;
     message?: string;
@@ -23,12 +27,13 @@ function defaultTrace(data: unknown, constructorOpt: Function, ...optionalParams
   let stack = traceObj.stack;
   if (!('message' in traceObj)) {
     // keep it identical to console.trace(), remove ': ' from 'Trace: ' when there's no message
-    stack = stack.substr(0, 'Trace'.length).concat(stack.substr('Trace'.length + 2));
+    stack = stack?.substr(0, 'Trace'.length).concat(stack?.substr('Trace'.length + 2));
   }
-  return stack;
+  return stack || '<no stack information>';
 }
 
 interface Hooks {
+  [k: string]: ((data: unknown, ...optionalParams: unknown[]) => string) | undefined;
   log?: (data: unknown, ...optionalParams: unknown[]) => string;
   info?: (data: unknown, ...optionalParams: unknown[]) => string;
   debug?: (data: unknown, ...optionalParams: unknown[]) => string;
@@ -43,16 +48,11 @@ const DefaultHook: Hooks = {
   debug: (data: unknown, ...optionalParams: unknown[]): string => '[DEBUG]' + format(data, ...optionalParams),
   warn: (data: unknown, ...optionalParams: unknown[]): string => '[WARN]' + format(data, ...optionalParams),
   error: (data: unknown, ...optionalParams: unknown[]): string => '[ERROR]' + format(data, ...optionalParams),
-  trace: (data: unknown, constructorOpt: Function, ...optionalParams: unknown[]): string =>
-    '[TRACE]' + defaultTrace(data, constructorOpt, ...optionalParams),
+  trace: (data: unknown, ...optionalParams: unknown[]): string => '[TRACE]' + defaultTrace(data, ...optionalParams),
 };
 
 type hookFunctionName = 'log' | 'info' | 'debug' | 'warn' | 'error' | 'trace';
 const hookFunctions: Array<hookFunctionName> = ['log', 'info', 'debug', 'warn', 'error', 'trace'];
-
-function isHookFunctionName(v: string): v is hookFunctionName {
-  return hookFunctions.indexOf(v as hookFunctionName) !== -1;
-}
 
 export class ConsoleHook {
   private log: typeof Console.prototype.log;
@@ -64,29 +64,41 @@ export class ConsoleHook {
   private console: ConsoleLike;
   private hooked?: boolean;
 
-  constructor(console: ConsoleLike, hooks?: Hooks) {
-    hookFunctions.forEach((fn) => {
-      this[fn] = console[fn];
-    });
+  constructor(console: ConsoleLike, hooks: Hooks = {}) {
+    this.log = console.log;
+    this.info = console.info;
+    this.debug = console.debug;
+    this.warn = console.warn;
+    this.error = console.error;
+    this.trace = console.trace;
     this.console = console;
     hooks = {
       ...DefaultHook,
-      ...Object.keys(hooks || {})
+      ...Object.keys(hooks)
         .filter((k) => typeof hooks[k] === 'function')
         .reduce(
           (pv, cv) => ({
-            [cv]: hooks[cv].bind(hooks),
+            [cv]: hooks[cv]?.bind(hooks),
             ...pv,
           }),
           {},
         ),
     };
-    Object.keys(hooks)
-      .filter((hook) => isHookFunctionName(hook) && hooks[hook])
-      .forEach((hook) => {
-        this.console[hook] = this.hookedCall(this[hook], hooks[hook]);
-      });
-
+    if (hooks.log) {
+      this.console.log = this.hookedCall(this.log, hooks.log);
+    }
+    if (hooks.info) {
+      this.console.info = this.hookedCall(this.info, hooks.info);
+    }
+    if (hooks.debug) {
+      this.console.debug = this.hookedCall(this.debug, hooks.debug);
+    }
+    if (hooks.warn) {
+      this.console.warn = this.hookedCall(this.warn, hooks.warn);
+    }
+    if (hooks.error) {
+      this.console.error = this.hookedCall(this.error, hooks.error);
+    }
     this.console.trace = (data: unknown, ...optionalParams: unknown[]): void => {
       if (this.hooked && hooks.trace) {
         data = hooks.trace(data, this.console.trace, ...optionalParams);
@@ -101,7 +113,7 @@ export class ConsoleHook {
     };
   }
 
-  private hookedCall<FunctionType extends Function>(
+  private hookedCall<FunctionType extends (...args: unknown[]) => unknown>(
     fn: FunctionType,
     hook: FunctionType,
   ): (data: unknown, ...optionalParams: unknown[]) => void {

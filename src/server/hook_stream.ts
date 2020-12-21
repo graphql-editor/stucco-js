@@ -1,9 +1,7 @@
-import { PassThrough } from 'stream';
+import { PassThrough, Writable } from 'stream';
 
-interface WriteFunc {
-  (buffer: string | Buffer | Uint8Array, cb?: (err?: Error) => void): boolean;
-  (str: string, encoding?: string, cb?: (err?: Error) => void): boolean;
-}
+type ErrorCallback = (error: Error | undefined | null) => void;
+type WriteFunc = Writable['write'];
 
 interface WriteStreamLike {
   write: WriteFunc;
@@ -31,20 +29,36 @@ export class StreamHook extends PassThrough {
     this.end();
   }
 
-  private hookWithCast<T, U, W, FunctionType extends (data: T, arg1?: U, arg2?: W) => boolean>(
-    fn: FunctionType,
-  ): FunctionType {
-    return ((data: T, arg1: U, arg2: W): boolean => {
-      if (this.hooked) {
-        this.write(data);
+  private hookWithCastOv1(
+    fn: WriteFunc,
+    arg1: string | Buffer | Uint8Array,
+    arg2: BufferEncoding,
+    arg3?: ErrorCallback,
+  ) {
+    if (this.hooked) {
+      this.write(arg1, arg2, arg3);
+    }
+    return fn(arg1, arg2, arg3);
+  }
+
+  private hookWithCastOv2(fn: WriteFunc, arg1: string | Buffer | Uint8Array, arg2?: ErrorCallback) {
+    const call = (fn: WriteFunc) => (arg2 ? fn(arg1, arg2) : fn(arg1));
+    if (this.hooked) {
+      call(this.write);
+    }
+    return call(fn);
+  }
+
+  private hookWithCast(fn: WriteFunc): WriteFunc {
+    return (
+      arg1: string | Buffer | Uint8Array,
+      arg2?: BufferEncoding | ErrorCallback,
+      arg3?: ErrorCallback,
+    ): boolean => {
+      if (typeof arg2 === 'string') {
+        return this.hookWithCastOv1(fn, arg1, arg2, arg3);
       }
-      if (typeof arg1 === 'undefined') {
-        return fn(data);
-      }
-      if (typeof arg2 === 'undefined') {
-        return fn(data, arg1);
-      }
-      return fn(data, arg1, arg2);
-    }) as FunctionType;
+      return this.hookWithCastOv2(fn, arg1, arg2);
+    };
   }
 }

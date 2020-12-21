@@ -32,7 +32,7 @@ export namespace ObjectValue {
 export class ArrayValue extends jspb.Message { 
     clearItemsList(): void;
     getItemsList(): Array<Value>;
-    setItemsList(value: Array<Value>): void;
+    setItemsList(value: Array<Value>): ArrayValue;
     addItems(value?: Value, index?: number): Value;
 
 
@@ -57,43 +57,43 @@ export class Value extends jspb.Message {
     hasI(): boolean;
     clearI(): void;
     getI(): number;
-    setI(value: number): void;
+    setI(value: number): Value;
 
 
     hasU(): boolean;
     clearU(): void;
     getU(): number;
-    setU(value: number): void;
+    setU(value: number): Value;
 
 
     hasF(): boolean;
     clearF(): void;
     getF(): number;
-    setF(value: number): void;
+    setF(value: number): Value;
 
 
     hasS(): boolean;
     clearS(): void;
     getS(): string;
-    setS(value: string): void;
+    setS(value: string): Value;
 
 
     hasB(): boolean;
     clearB(): void;
     getB(): boolean;
-    setB(value: boolean): void;
+    setB(value: boolean): Value;
 
 
     hasO(): boolean;
     clearO(): void;
     getO(): ObjectValue | undefined;
-    setO(value?: ObjectValue): void;
+    setO(value?: ObjectValue): Value;
 
 
     hasA(): boolean;
     clearA(): void;
     getA(): ArrayValue | undefined;
-    setA(value?: ArrayValue): void;
+    setA(value?: ArrayValue): Value;
 
 
     hasAny(): boolean;
@@ -101,19 +101,19 @@ export class Value extends jspb.Message {
     getAny(): Uint8Array | string;
     getAny_asU8(): Uint8Array;
     getAny_asB64(): string;
-    setAny(value: Uint8Array | string): void;
+    setAny(value: Uint8Array | string): Value;
 
 
     hasVariable(): boolean;
     clearVariable(): void;
     getVariable(): string;
-    setVariable(value: string): void;
+    setVariable(value: string): Value;
 
 
     hasNil(): boolean;
     clearNil(): void;
     getNil(): boolean;
-    setNil(value: boolean): void;
+    setNil(value: boolean): Value;
 
 
     getTestValueCase(): Value.TestValueCase;
@@ -143,7 +143,7 @@ export namespace Value {
     }
 
     export enum TestValueCase {
-        TESTVALUE_NOT_SET = 0,
+        TEST_VALUE_NOT_SET = 0,
     
     I = 1,
 
@@ -171,7 +171,7 @@ export namespace Value {
 
 export class Error extends jspb.Message { 
     getMsg(): string;
-    setMsg(value: string): void;
+    setMsg(value: string): Error;
 
 
     serializeBinary(): Uint8Array;
@@ -192,7 +192,7 @@ export namespace Error {
 
 export class Function extends jspb.Message { 
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): Function;
 
 
     serializeBinary(): Uint8Array;
@@ -216,19 +216,19 @@ export class TypeRef extends jspb.Message {
     hasName(): boolean;
     clearName(): void;
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): TypeRef;
 
 
     hasNonnull(): boolean;
     clearNonnull(): void;
     getNonnull(): TypeRef | undefined;
-    setNonnull(value?: TypeRef): void;
+    setNonnull(value?: TypeRef): TypeRef;
 
 
     hasList(): boolean;
     clearList(): void;
     getList(): TypeRef | undefined;
-    setList(value?: TypeRef): void;
+    setList(value?: TypeRef): TypeRef;
 
 
     getTestTyperefCase(): TypeRef.TestTyperefCase;
@@ -251,7 +251,7 @@ export namespace TypeRef {
     }
 
     export enum TestTyperefCase {
-        TESTTYPEREF_NOT_SET = 0,
+        TEST_TYPEREF_NOT_SET = 0,
     
     NAME = 1,
 
@@ -268,13 +268,13 @@ export class ResponsePath extends jspb.Message {
     hasKey(): boolean;
     clearKey(): void;
     getKey(): Value | undefined;
-    setKey(value?: Value): void;
+    setKey(value?: Value): ResponsePath;
 
 
     hasPrev(): boolean;
     clearPrev(): void;
     getPrev(): ResponsePath | undefined;
-    setPrev(value?: ResponsePath): void;
+    setPrev(value?: ResponsePath): ResponsePath;
 
 
     serializeBinary(): Uint8Array;
@@ -296,7 +296,7 @@ export namespace ResponsePath {
 
 export class Variable extends jspb.Message { 
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): Variable;
 
 
     serializeBinary(): Uint8Array;
@@ -320,13 +320,13 @@ export class VariableDefinition extends jspb.Message {
     hasVariable(): boolean;
     clearVariable(): void;
     getVariable(): Variable | undefined;
-    setVariable(value?: Variable): void;
+    setVariable(value?: Variable): VariableDefinition;
 
 
     hasDefaultvalue(): boolean;
     clearDefaultvalue(): void;
     getDefaultvalue(): Value | undefined;
-    setDefaultvalue(value?: Value): void;
+    setDefaultvalue(value?: Value): VariableDefinition;
 
 
     serializeBinary(): Uint8Array;
@@ -348,7 +348,7 @@ export namespace VariableDefinition {
 
 export class Directive extends jspb.Message { 
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): Directive;
 
 
     getArgumentsMap(): jspb.Map<string, Value>;
@@ -376,23 +376,23 @@ export namespace Directive {
 export class FragmentDefinition extends jspb.Message { 
     clearDirectivesList(): void;
     getDirectivesList(): Array<Directive>;
-    setDirectivesList(value: Array<Directive>): void;
+    setDirectivesList(value: Array<Directive>): FragmentDefinition;
     addDirectives(value?: Directive, index?: number): Directive;
 
 
     hasTypecondition(): boolean;
     clearTypecondition(): void;
     getTypecondition(): TypeRef | undefined;
-    setTypecondition(value?: TypeRef): void;
+    setTypecondition(value?: TypeRef): FragmentDefinition;
 
     clearSelectionsetList(): void;
     getSelectionsetList(): Array<Selection>;
-    setSelectionsetList(value: Array<Selection>): void;
+    setSelectionsetList(value: Array<Selection>): FragmentDefinition;
     addSelectionset(value?: Selection, index?: number): Selection;
 
     clearVariabledefinitionsList(): void;
     getVariabledefinitionsList(): Array<VariableDefinition>;
-    setVariabledefinitionsList(value: Array<VariableDefinition>): void;
+    setVariabledefinitionsList(value: Array<VariableDefinition>): FragmentDefinition;
     addVariabledefinitions(value?: VariableDefinition, index?: number): VariableDefinition;
 
 
@@ -417,7 +417,7 @@ export namespace FragmentDefinition {
 
 export class Selection extends jspb.Message { 
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): Selection;
 
 
     getArgumentsMap(): jspb.Map<string, Value>;
@@ -425,19 +425,19 @@ export class Selection extends jspb.Message {
 
     clearDirectivesList(): void;
     getDirectivesList(): Array<Directive>;
-    setDirectivesList(value: Array<Directive>): void;
+    setDirectivesList(value: Array<Directive>): Selection;
     addDirectives(value?: Directive, index?: number): Directive;
 
     clearSelectionsetList(): void;
     getSelectionsetList(): Array<Selection>;
-    setSelectionsetList(value: Array<Selection>): void;
+    setSelectionsetList(value: Array<Selection>): Selection;
     addSelectionset(value?: Selection, index?: number): Selection;
 
 
     hasDefinition(): boolean;
     clearDefinition(): void;
     getDefinition(): FragmentDefinition | undefined;
-    setDefinition(value?: FragmentDefinition): void;
+    setDefinition(value?: FragmentDefinition): Selection;
 
 
     serializeBinary(): Uint8Array;
@@ -463,24 +463,24 @@ export namespace Selection {
 
 export class OperationDefinition extends jspb.Message { 
     getOperation(): string;
-    setOperation(value: string): void;
+    setOperation(value: string): OperationDefinition;
 
     getName(): string;
-    setName(value: string): void;
+    setName(value: string): OperationDefinition;
 
     clearVariabledefinitionsList(): void;
     getVariabledefinitionsList(): Array<VariableDefinition>;
-    setVariabledefinitionsList(value: Array<VariableDefinition>): void;
+    setVariabledefinitionsList(value: Array<VariableDefinition>): OperationDefinition;
     addVariabledefinitions(value?: VariableDefinition, index?: number): VariableDefinition;
 
     clearDirectivesList(): void;
     getDirectivesList(): Array<Directive>;
-    setDirectivesList(value: Array<Directive>): void;
+    setDirectivesList(value: Array<Directive>): OperationDefinition;
     addDirectives(value?: Directive, index?: number): Directive;
 
     clearSelectionsetList(): void;
     getSelectionsetList(): Array<Selection>;
-    setSelectionsetList(value: Array<Selection>): void;
+    setSelectionsetList(value: Array<Selection>): OperationDefinition;
     addSelectionset(value?: Selection, index?: number): Selection;
 
 
@@ -506,31 +506,31 @@ export namespace OperationDefinition {
 
 export class FieldResolveInfo extends jspb.Message { 
     getFieldname(): string;
-    setFieldname(value: string): void;
+    setFieldname(value: string): FieldResolveInfo;
 
 
     hasPath(): boolean;
     clearPath(): void;
     getPath(): ResponsePath | undefined;
-    setPath(value?: ResponsePath): void;
+    setPath(value?: ResponsePath): FieldResolveInfo;
 
 
     hasReturntype(): boolean;
     clearReturntype(): void;
     getReturntype(): TypeRef | undefined;
-    setReturntype(value?: TypeRef): void;
+    setReturntype(value?: TypeRef): FieldResolveInfo;
 
 
     hasParenttype(): boolean;
     clearParenttype(): void;
     getParenttype(): TypeRef | undefined;
-    setParenttype(value?: TypeRef): void;
+    setParenttype(value?: TypeRef): FieldResolveInfo;
 
 
     hasOperation(): boolean;
     clearOperation(): void;
     getOperation(): OperationDefinition | undefined;
-    setOperation(value?: OperationDefinition): void;
+    setOperation(value?: OperationDefinition): FieldResolveInfo;
 
 
     getVariablevaluesMap(): jspb.Map<string, Value>;
@@ -564,13 +564,13 @@ export class FieldResolveRequest extends jspb.Message {
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): FieldResolveRequest;
 
 
     hasSource(): boolean;
     clearSource(): void;
     getSource(): Value | undefined;
-    setSource(value?: Value): void;
+    setSource(value?: Value): FieldResolveRequest;
 
 
     getArgumentsMap(): jspb.Map<string, Value>;
@@ -580,7 +580,7 @@ export class FieldResolveRequest extends jspb.Message {
     hasInfo(): boolean;
     clearInfo(): void;
     getInfo(): FieldResolveInfo | undefined;
-    setInfo(value?: FieldResolveInfo): void;
+    setInfo(value?: FieldResolveInfo): FieldResolveRequest;
 
 
     getSecretsMap(): jspb.Map<string, string>;
@@ -590,7 +590,7 @@ export class FieldResolveRequest extends jspb.Message {
     hasProtocol(): boolean;
     clearProtocol(): void;
     getProtocol(): Value | undefined;
-    setProtocol(value?: Value): void;
+    setProtocol(value?: Value): FieldResolveRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -621,13 +621,13 @@ export class FieldResolveResponse extends jspb.Message {
     hasResponse(): boolean;
     clearResponse(): void;
     getResponse(): Value | undefined;
-    setResponse(value?: Value): void;
+    setResponse(value?: Value): FieldResolveResponse;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): FieldResolveResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -649,31 +649,31 @@ export namespace FieldResolveResponse {
 
 export class InterfaceResolveTypeInfo extends jspb.Message { 
     getFieldname(): string;
-    setFieldname(value: string): void;
+    setFieldname(value: string): InterfaceResolveTypeInfo;
 
 
     hasPath(): boolean;
     clearPath(): void;
     getPath(): ResponsePath | undefined;
-    setPath(value?: ResponsePath): void;
+    setPath(value?: ResponsePath): InterfaceResolveTypeInfo;
 
 
     hasReturntype(): boolean;
     clearReturntype(): void;
     getReturntype(): TypeRef | undefined;
-    setReturntype(value?: TypeRef): void;
+    setReturntype(value?: TypeRef): InterfaceResolveTypeInfo;
 
 
     hasParenttype(): boolean;
     clearParenttype(): void;
     getParenttype(): TypeRef | undefined;
-    setParenttype(value?: TypeRef): void;
+    setParenttype(value?: TypeRef): InterfaceResolveTypeInfo;
 
 
     hasOperation(): boolean;
     clearOperation(): void;
     getOperation(): OperationDefinition | undefined;
-    setOperation(value?: OperationDefinition): void;
+    setOperation(value?: OperationDefinition): InterfaceResolveTypeInfo;
 
 
     getVariablevaluesMap(): jspb.Map<string, Value>;
@@ -707,19 +707,19 @@ export class InterfaceResolveTypeRequest extends jspb.Message {
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): InterfaceResolveTypeRequest;
 
 
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): InterfaceResolveTypeRequest;
 
 
     hasInfo(): boolean;
     clearInfo(): void;
     getInfo(): InterfaceResolveTypeInfo | undefined;
-    setInfo(value?: InterfaceResolveTypeInfo): void;
+    setInfo(value?: InterfaceResolveTypeInfo): InterfaceResolveTypeRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -745,13 +745,13 @@ export class InterfaceResolveTypeResponse extends jspb.Message {
     hasType(): boolean;
     clearType(): void;
     getType(): TypeRef | undefined;
-    setType(value?: TypeRef): void;
+    setType(value?: TypeRef): InterfaceResolveTypeResponse;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): InterfaceResolveTypeResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -776,13 +776,13 @@ export class ScalarParseRequest extends jspb.Message {
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): ScalarParseRequest;
 
 
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): ScalarParseRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -807,13 +807,13 @@ export class ScalarParseResponse extends jspb.Message {
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): ScalarParseResponse;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): ScalarParseResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -838,13 +838,13 @@ export class ScalarSerializeRequest extends jspb.Message {
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): ScalarSerializeRequest;
 
 
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): ScalarSerializeRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -869,13 +869,13 @@ export class ScalarSerializeResponse extends jspb.Message {
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): ScalarSerializeResponse;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): ScalarSerializeResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -897,31 +897,31 @@ export namespace ScalarSerializeResponse {
 
 export class UnionResolveTypeInfo extends jspb.Message { 
     getFieldname(): string;
-    setFieldname(value: string): void;
+    setFieldname(value: string): UnionResolveTypeInfo;
 
 
     hasPath(): boolean;
     clearPath(): void;
     getPath(): ResponsePath | undefined;
-    setPath(value?: ResponsePath): void;
+    setPath(value?: ResponsePath): UnionResolveTypeInfo;
 
 
     hasReturntype(): boolean;
     clearReturntype(): void;
     getReturntype(): TypeRef | undefined;
-    setReturntype(value?: TypeRef): void;
+    setReturntype(value?: TypeRef): UnionResolveTypeInfo;
 
 
     hasParenttype(): boolean;
     clearParenttype(): void;
     getParenttype(): TypeRef | undefined;
-    setParenttype(value?: TypeRef): void;
+    setParenttype(value?: TypeRef): UnionResolveTypeInfo;
 
 
     hasOperation(): boolean;
     clearOperation(): void;
     getOperation(): OperationDefinition | undefined;
-    setOperation(value?: OperationDefinition): void;
+    setOperation(value?: OperationDefinition): UnionResolveTypeInfo;
 
 
     getVariablevaluesMap(): jspb.Map<string, Value>;
@@ -955,19 +955,19 @@ export class UnionResolveTypeRequest extends jspb.Message {
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): UnionResolveTypeRequest;
 
 
     hasValue(): boolean;
     clearValue(): void;
     getValue(): Value | undefined;
-    setValue(value?: Value): void;
+    setValue(value?: Value): UnionResolveTypeRequest;
 
 
     hasInfo(): boolean;
     clearInfo(): void;
     getInfo(): UnionResolveTypeInfo | undefined;
-    setInfo(value?: UnionResolveTypeInfo): void;
+    setInfo(value?: UnionResolveTypeInfo): UnionResolveTypeRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -993,13 +993,13 @@ export class UnionResolveTypeResponse extends jspb.Message {
     hasType(): boolean;
     clearType(): void;
     getType(): TypeRef | undefined;
-    setType(value?: TypeRef): void;
+    setType(value?: TypeRef): UnionResolveTypeResponse;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): UnionResolveTypeResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -1021,10 +1021,10 @@ export namespace UnionResolveTypeResponse {
 
 export class Secret extends jspb.Message { 
     getKey(): string;
-    setKey(value: string): void;
+    setKey(value: string): Secret;
 
     getValue(): string;
-    setValue(value: string): void;
+    setValue(value: string): Secret;
 
 
     serializeBinary(): Uint8Array;
@@ -1047,7 +1047,7 @@ export namespace Secret {
 export class SetSecretsRequest extends jspb.Message { 
     clearSecretsList(): void;
     getSecretsList(): Array<Secret>;
-    setSecretsList(value: Array<Secret>): void;
+    setSecretsList(value: Array<Secret>): SetSecretsRequest;
     addSecrets(value?: Secret, index?: number): Secret;
 
 
@@ -1072,7 +1072,7 @@ export class SetSecretsResponse extends jspb.Message {
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): SetSecretsResponse;
 
 
     serializeBinary(): Uint8Array;
@@ -1093,31 +1093,31 @@ export namespace SetSecretsResponse {
 
 export class StreamInfo extends jspb.Message { 
     getFieldname(): string;
-    setFieldname(value: string): void;
+    setFieldname(value: string): StreamInfo;
 
 
     hasPath(): boolean;
     clearPath(): void;
     getPath(): ResponsePath | undefined;
-    setPath(value?: ResponsePath): void;
+    setPath(value?: ResponsePath): StreamInfo;
 
 
     hasReturntype(): boolean;
     clearReturntype(): void;
     getReturntype(): TypeRef | undefined;
-    setReturntype(value?: TypeRef): void;
+    setReturntype(value?: TypeRef): StreamInfo;
 
 
     hasParenttype(): boolean;
     clearParenttype(): void;
     getParenttype(): TypeRef | undefined;
-    setParenttype(value?: TypeRef): void;
+    setParenttype(value?: TypeRef): StreamInfo;
 
 
     hasOperation(): boolean;
     clearOperation(): void;
     getOperation(): OperationDefinition | undefined;
-    setOperation(value?: OperationDefinition): void;
+    setOperation(value?: OperationDefinition): StreamInfo;
 
 
     getVariablevaluesMap(): jspb.Map<string, Value>;
@@ -1151,7 +1151,7 @@ export class StreamRequest extends jspb.Message {
     hasFunction(): boolean;
     clearFunction(): void;
     getFunction(): Function | undefined;
-    setFunction(value?: Function): void;
+    setFunction(value?: Function): StreamRequest;
 
 
     getArgumentsMap(): jspb.Map<string, Value>;
@@ -1161,7 +1161,7 @@ export class StreamRequest extends jspb.Message {
     hasInfo(): boolean;
     clearInfo(): void;
     getInfo(): StreamInfo | undefined;
-    setInfo(value?: StreamInfo): void;
+    setInfo(value?: StreamInfo): StreamRequest;
 
 
     getSecretsMap(): jspb.Map<string, string>;
@@ -1171,7 +1171,7 @@ export class StreamRequest extends jspb.Message {
     hasProtocol(): boolean;
     clearProtocol(): void;
     getProtocol(): Value | undefined;
-    setProtocol(value?: Value): void;
+    setProtocol(value?: Value): StreamRequest;
 
 
     serializeBinary(): Uint8Array;
@@ -1201,13 +1201,13 @@ export class StreamMessage extends jspb.Message {
     hasResponse(): boolean;
     clearResponse(): void;
     getResponse(): Value | undefined;
-    setResponse(value?: Value): void;
+    setResponse(value?: Value): StreamMessage;
 
 
     hasError(): boolean;
     clearError(): void;
     getError(): Error | undefined;
-    setError(value?: Error): void;
+    setError(value?: Error): StreamMessage;
 
 
     serializeBinary(): Uint8Array;
@@ -1248,7 +1248,7 @@ export class ByteStream extends jspb.Message {
     getData(): Uint8Array | string;
     getData_asU8(): Uint8Array;
     getData_asB64(): string;
-    setData(value: Uint8Array | string): void;
+    setData(value: Uint8Array | string): ByteStream;
 
 
     serializeBinary(): Uint8Array;
@@ -1264,5 +1264,147 @@ export class ByteStream extends jspb.Message {
 export namespace ByteStream {
     export type AsObject = {
         data: Uint8Array | string,
+    }
+}
+
+export class SubscriptionConnectionRequest extends jspb.Message { 
+
+    hasFunction(): boolean;
+    clearFunction(): void;
+    getFunction(): Function | undefined;
+    setFunction(value?: Function): SubscriptionConnectionRequest;
+
+    getQuery(): string;
+    setQuery(value: string): SubscriptionConnectionRequest;
+
+
+    getVariablevaluesMap(): jspb.Map<string, Value>;
+    clearVariablevaluesMap(): void;
+
+    getOperationname(): string;
+    setOperationname(value: string): SubscriptionConnectionRequest;
+
+
+    hasProtocol(): boolean;
+    clearProtocol(): void;
+    getProtocol(): Value | undefined;
+    setProtocol(value?: Value): SubscriptionConnectionRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubscriptionConnectionRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: SubscriptionConnectionRequest): SubscriptionConnectionRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubscriptionConnectionRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubscriptionConnectionRequest;
+    static deserializeBinaryFromReader(message: SubscriptionConnectionRequest, reader: jspb.BinaryReader): SubscriptionConnectionRequest;
+}
+
+export namespace SubscriptionConnectionRequest {
+    export type AsObject = {
+        pb_function?: Function.AsObject,
+        query: string,
+
+        variablevaluesMap: Array<[string, Value.AsObject]>,
+        operationname: string,
+        protocol?: Value.AsObject,
+    }
+}
+
+export class SubscriptionConnectionResponse extends jspb.Message { 
+
+    hasResponse(): boolean;
+    clearResponse(): void;
+    getResponse(): Value | undefined;
+    setResponse(value?: Value): SubscriptionConnectionResponse;
+
+
+    hasError(): boolean;
+    clearError(): void;
+    getError(): Error | undefined;
+    setError(value?: Error): SubscriptionConnectionResponse;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubscriptionConnectionResponse.AsObject;
+    static toObject(includeInstance: boolean, msg: SubscriptionConnectionResponse): SubscriptionConnectionResponse.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubscriptionConnectionResponse, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubscriptionConnectionResponse;
+    static deserializeBinaryFromReader(message: SubscriptionConnectionResponse, reader: jspb.BinaryReader): SubscriptionConnectionResponse;
+}
+
+export namespace SubscriptionConnectionResponse {
+    export type AsObject = {
+        response?: Value.AsObject,
+        error?: Error.AsObject,
+    }
+}
+
+export class SubscriptionListenRequest extends jspb.Message { 
+
+    hasFunction(): boolean;
+    clearFunction(): void;
+    getFunction(): Function | undefined;
+    setFunction(value?: Function): SubscriptionListenRequest;
+
+    getQuery(): string;
+    setQuery(value: string): SubscriptionListenRequest;
+
+
+    getVariablevaluesMap(): jspb.Map<string, Value>;
+    clearVariablevaluesMap(): void;
+
+    getOperationname(): string;
+    setOperationname(value: string): SubscriptionListenRequest;
+
+
+    hasProtocol(): boolean;
+    clearProtocol(): void;
+    getProtocol(): Value | undefined;
+    setProtocol(value?: Value): SubscriptionListenRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubscriptionListenRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: SubscriptionListenRequest): SubscriptionListenRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubscriptionListenRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubscriptionListenRequest;
+    static deserializeBinaryFromReader(message: SubscriptionListenRequest, reader: jspb.BinaryReader): SubscriptionListenRequest;
+}
+
+export namespace SubscriptionListenRequest {
+    export type AsObject = {
+        pb_function?: Function.AsObject,
+        query: string,
+
+        variablevaluesMap: Array<[string, Value.AsObject]>,
+        operationname: string,
+        protocol?: Value.AsObject,
+    }
+}
+
+export class SubscriptionListenMessage extends jspb.Message { 
+    getNext(): boolean;
+    setNext(value: boolean): SubscriptionListenMessage;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SubscriptionListenMessage.AsObject;
+    static toObject(includeInstance: boolean, msg: SubscriptionListenMessage): SubscriptionListenMessage.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SubscriptionListenMessage, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SubscriptionListenMessage;
+    static deserializeBinaryFromReader(message: SubscriptionListenMessage, reader: jspb.BinaryReader): SubscriptionListenMessage;
+}
+
+export namespace SubscriptionListenMessage {
+    export type AsObject = {
+        next: boolean,
     }
 }

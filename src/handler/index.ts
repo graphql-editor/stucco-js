@@ -4,13 +4,13 @@ export interface WithFunction {
   getFunction(): { getName: () => string } | undefined;
 }
 
-function handlerFunc<T, U>(name: string, mod: { [k: string]: unknown }): (x: T) => Promise<U> | U {
+function handlerFunc<T, U, V>(name: string, mod: { [k: string]: unknown }): (x: T, y?: V) => Promise<U> | U {
   if (!name) {
     if (!mod.__esModule || ('default' in mod && !('handler' in mod))) {
       mod = mod.default as { [k: string]: unknown };
     }
     if (typeof mod === 'function') {
-      return mod as (x: T) => Promise<U> | U;
+      return mod as (x: T, y?: V) => Promise<U> | U;
     }
     if ('handler' in mod) {
       name = 'handler';
@@ -19,22 +19,24 @@ function handlerFunc<T, U>(name: string, mod: { [k: string]: unknown }): (x: T) 
   if (!name || !(name in mod) || typeof mod[name] !== 'function') {
     throw new TypeError('invalid handler module');
   }
-  return mod[name] as (x: T) => Promise<U> | U;
+  return mod[name] as (x: T, y?: V) => Promise<U> | U;
 }
 
 const cache: {
-  [k: string]: Function;
+  [k: string]: (arg1: unknown, arg2?: unknown) => unknown;
 } = {};
 
-function cachedFunc<T, U>(fnName: string): ((x: T) => Promise<U | undefined>) | undefined {
+function cachedFunc<T, U, V>(fnName: string): ((x: T, y?: V) => Promise<U | undefined>) | undefined {
   const cached = cache[fnName];
   if (cached) {
-    return cached as (x: T) => Promise<U | undefined>;
+    return cached as (x: T, y?: V) => Promise<U | undefined>;
   }
   return;
 }
 
-export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Promise<U | undefined>> {
+export async function getHandler<T, U, V = undefined>(
+  req: WithFunction,
+): Promise<(x: T, y?: V) => Promise<U | undefined>> {
   if (!req.hasFunction()) {
     throw new Error('missing function');
   }
@@ -43,7 +45,7 @@ export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Pro
     throw new Error(`function name is empty`);
   }
   const fnName = fn.getName();
-  const cached = cachedFunc<T, U>(fnName);
+  const cached = cachedFunc<T, U, V>(fnName);
   if (cached) {
     return cached;
   }
@@ -51,7 +53,8 @@ export async function getHandler<T, U>(req: WithFunction): Promise<(x: T) => Pro
   const mod = await import(
     `${process.env.STUCCO_PROJECT_ROOT || process.cwd()}/${fnName.slice(0, fnName.length - ext.length)}`
   );
-  const handler = handlerFunc<T, U>(ext.slice(1), mod);
-  cache[fnName] = (x: T): Promise<U> => Promise.resolve(handler(x));
-  return cachedFunc<T, U>(fnName);
+  const handler = handlerFunc<T, U, V>(ext.slice(1), mod);
+  const wrapHandler = (x: T, y?: V): Promise<U> => Promise.resolve(handler(x, y));
+  cache[fnName] = wrapHandler as (arg1: unknown, arg2?: unknown) => unknown;
+  return wrapHandler;
 }

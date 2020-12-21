@@ -87,8 +87,8 @@ export interface FieldResolveInfo {
 }
 
 export interface FieldResolveInput<Arguments = Record<string, unknown> | undefined, Source = unknown | undefined> {
-  source: Source;
-  arguments: Arguments;
+  source?: Source;
+  arguments?: Arguments;
   info: FieldResolveInfo;
   protocol?: Protocol;
   environment?: unknown;
@@ -182,8 +182,36 @@ export type UnionResolveTypeOutput =
   | (() => string)
   | string;
 
+export interface SubscriptionConnectionInput {
+  query: string;
+  variableValues?: Record<string, unknown>;
+  operationName?: string;
+  protocol?: Protocol;
+}
+
+export type SubscriptionConnectionOutput<T = unknown | (() => unknown)> =
+  | {
+      response?: T;
+      error?: Error;
+    }
+  | T;
+
+export interface SubscriptionListenEmitter {
+  emit: () => Promise<void>;
+  on(ev: 'close', handler: (err?: Error) => void): void;
+  off(ev: 'close', handler: (err?: Error) => void): void;
+}
+export interface SubscriptionListenInput {
+  query: string;
+  variableValues?: Record<string, unknown>;
+  operationName?: string;
+  protocol?: Protocol;
+}
+
 export type FieldResolveHandler = (input: FieldResolveInput) => FieldResolveOutput;
 export type InterfaceResolveTypeHandler = (input: InterfaceResolveTypeInput) => InterfaceResolveTypeOutput;
 export type ScalarParseHandler = (input: ScalarParseInput) => ScalarParseOutput;
 export type ScalarSerializeHandler = (input: ScalarSerializeInput) => ScalarSerializeOutput;
 export type UnionResolveTypeHandler = (input: UnionResolveTypeInput) => UnionResolveTypeOutput;
+export type SubscriptionConnectionHandler = (input: SubscriptionConnectionInput) => SubscriptionConnectionOutput;
+export type SubscriptionListenHandler = (input: SubscriptionListenInput, emitter: SubscriptionListenEmitter) => void;

@@ -158,6 +158,50 @@ function deserialize_proto_StreamRequest(buffer_arg) {
   return proto_driver_pb.StreamRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_proto_SubscriptionConnectionRequest(arg) {
+  if (!(arg instanceof proto_driver_pb.SubscriptionConnectionRequest)) {
+    throw new Error('Expected argument of type proto.SubscriptionConnectionRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SubscriptionConnectionRequest(buffer_arg) {
+  return proto_driver_pb.SubscriptionConnectionRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_proto_SubscriptionConnectionResponse(arg) {
+  if (!(arg instanceof proto_driver_pb.SubscriptionConnectionResponse)) {
+    throw new Error('Expected argument of type proto.SubscriptionConnectionResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SubscriptionConnectionResponse(buffer_arg) {
+  return proto_driver_pb.SubscriptionConnectionResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_proto_SubscriptionListenMessage(arg) {
+  if (!(arg instanceof proto_driver_pb.SubscriptionListenMessage)) {
+    throw new Error('Expected argument of type proto.SubscriptionListenMessage');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SubscriptionListenMessage(buffer_arg) {
+  return proto_driver_pb.SubscriptionListenMessage.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_proto_SubscriptionListenRequest(arg) {
+  if (!(arg instanceof proto_driver_pb.SubscriptionListenRequest)) {
+    throw new Error('Expected argument of type proto.SubscriptionListenRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_proto_SubscriptionListenRequest(buffer_arg) {
+  return proto_driver_pb.SubscriptionListenRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_proto_UnionResolveTypeRequest(arg) {
   if (!(arg instanceof proto_driver_pb.UnionResolveTypeRequest)) {
     throw new Error('Expected argument of type proto.UnionResolveTypeRequest');
@@ -280,6 +324,28 @@ var DriverService = exports.DriverService = {
     requestDeserialize: deserialize_proto_ByteStreamRequest,
     responseSerialize: serialize_proto_ByteStream,
     responseDeserialize: deserialize_proto_ByteStream,
+  },
+  subscriptionConnection: {
+    path: '/proto.Driver/SubscriptionConnection',
+    requestStream: false,
+    responseStream: false,
+    requestType: proto_driver_pb.SubscriptionConnectionRequest,
+    responseType: proto_driver_pb.SubscriptionConnectionResponse,
+    requestSerialize: serialize_proto_SubscriptionConnectionRequest,
+    requestDeserialize: deserialize_proto_SubscriptionConnectionRequest,
+    responseSerialize: serialize_proto_SubscriptionConnectionResponse,
+    responseDeserialize: deserialize_proto_SubscriptionConnectionResponse,
+  },
+  subscriptionListen: {
+    path: '/proto.Driver/SubscriptionListen',
+    requestStream: false,
+    responseStream: true,
+    requestType: proto_driver_pb.SubscriptionListenRequest,
+    responseType: proto_driver_pb.SubscriptionListenMessage,
+    requestSerialize: serialize_proto_SubscriptionListenRequest,
+    requestDeserialize: deserialize_proto_SubscriptionListenRequest,
+    responseSerialize: serialize_proto_SubscriptionListenMessage,
+    responseDeserialize: deserialize_proto_SubscriptionListenMessage,
   },
 };
 

@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import * as grpc from 'grpc';
 import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-ts-health-check';
+import { SubscriptionListenInput, SubscriptionListenEmitter } from '../api';
 import { getHandler } from '../handler';
 import { DriverService } from '../proto/driver_grpc_pb';
 import {
@@ -11,6 +12,8 @@ import {
   scalarParse,
   scalarSerialize,
   unionResolveType,
+  subscriptionConnection,
+  subscritpionListen,
 } from '../proto/driver';
 import {
   ByteStream,
@@ -27,17 +30,29 @@ import {
   UnionResolveTypeResponse,
   SetSecretsRequest,
   SetSecretsResponse,
+  StreamRequest,
+  SubscriptionConnectionRequest,
+  SubscriptionConnectionResponse,
+  SubscriptionListenRequest,
 } from '../proto/driver_pb';
 import { Writable } from 'stream';
 import { Profiler } from './profiler';
 import { setSecretsEnvironment } from '../raw/set_secrets';
 
+function toBuffer(v: unknown): Buffer {
+  if (Buffer.isBuffer(v)) {
+    return v;
+  }
+  if (ArrayBuffer.isView(v)) {
+    return Buffer.from(v.buffer);
+  }
+  return Buffer.from(`${v}`);
+}
+
 export interface WithFunction {
   hasFunction(): boolean;
   getFunction(): { getName: () => string } | undefined;
 }
-
-type writeFuncType = typeof process.stdout.write;
 
 function isCallRequestWithFunction(
   v: unknown,
@@ -45,12 +60,12 @@ function isCallRequestWithFunction(
   request: WithFunction;
 } {
   let request: WithFunction | unknown;
-  if (typeof v === 'object' && 'request' in v) {
+  if (typeof v === 'object' && v !== null && 'request' in v) {
     request = (v as {
       request: unknown;
     }).request;
   }
-  return request && typeof request === 'object' && 'hasFunction' in request && 'getFunction' in request;
+  return typeof request === 'object' && request !== null && 'hasFunction' in request && 'getFunction' in request;
 }
 
 interface ServerOptions {
@@ -61,7 +76,7 @@ interface ServerOptions {
   privateKey?: string;
   certChain?: string;
   checkClientCertificate?: boolean;
-  grpcServerOpts?: object;
+  grpcServerOpts?: Record<string, unknown>;
   server?: GRPCServer;
   stdoutHook?: StreamHook;
   stderrHook?: StreamHook;
@@ -118,8 +133,10 @@ export class Server {
       setSecrets: this.wrap(this, this.setSecrets),
       stderr: this.wrap(this, this.stderr),
       stdout: this.wrap(this, this.stdout),
-      stream: undefined,
+      stream: (srv: grpc.ServerWritableStream<StreamRequest>) => this.stream(srv),
       unionResolveType: this.wrap(this, this.unionResolveType),
+      subscriptionConnection: this.wrap(this, this.subscriptionConnection),
+      subscriptionListen: (srv: grpc.ServerWritableStream<SubscriptionListenRequest>) => this.subscriptionListen(srv),
     });
     this.stdoutStreams = [];
     this.stderrStreams = [];
@@ -128,15 +145,15 @@ export class Server {
     this.stdoutHook = serverOpts.stdoutHook;
     this.stderrHook = serverOpts.stderrHook;
     this.consoleHook = serverOpts.consoleHook;
-    this.addListener((data: Buffer): void => {
-      this.writeToGRPCStdout(data);
+    this.addListener((data: unknown): void => {
+      this.writeToGRPCStdout(toBuffer(data));
     }, this.stdoutHook);
-    this.addListener((data: Buffer): void => {
-      this.writeToGRPCStderr(data);
+    this.addListener((data: unknown): void => {
+      this.writeToGRPCStderr(toBuffer(data));
     }, this.stderrHook);
   }
 
-  private addListener(listener: (data: Buffer) => void, hook?: StreamHook): void {
+  private addListener(listener: (data: unknown) => void, hook?: StreamHook): void {
     if (!hook) {
       return;
     }
@@ -146,29 +163,24 @@ export class Server {
     });
   }
 
-  private writeToGRPCStdout(data: Buffer): void {
+  private writeToGRPC(data: Buffer, streams: Writable[]): Writable[] {
     const msg = new ByteStream();
     msg.setData(Uint8Array.from(data));
-    this.stdoutStreams.forEach((v) => {
+    streams.forEach((v) => {
       v.write(msg, (e) => {
         if (e) {
           v.end();
-          this.stdoutStreams = this.stdoutStreams.filter((stream) => stream !== v);
+          streams = streams.filter((stream) => stream !== v);
         }
       });
     });
+    return streams;
+  }
+  private writeToGRPCStdout(data: Buffer): void {
+    this.stdoutStreams = this.writeToGRPC(data, this.stdoutStreams);
   }
   private writeToGRPCStderr(data: Buffer): void {
-    const msg = new ByteStream();
-    msg.setData(Uint8Array.from(data));
-    this.stderrStreams.forEach((v) => {
-      v.write(msg, (e) => {
-        if (e) {
-          v.end();
-          this.stderrStreams = this.stderrStreams.filter((stream) => stream !== v);
-        }
-      });
-    });
+    this.stderrStreams = this.writeToGRPC(data, this.stderrStreams);
   }
 
   private hookIO(): void {
@@ -201,7 +213,7 @@ export class Server {
     responseCtor: {
       new (): U;
     },
-    fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
+    fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
   ): Promise<void> {
     this.hookIO();
     try {
@@ -258,6 +270,28 @@ export class Server {
     return this.executeUserHandler(call, callback, UnionResolveTypeResponse, unionResolveType);
   }
 
+  public async stream(srv: grpc.ServerWritableStream<StreamRequest>): Promise<void> {
+    console.error(`Requested stream with function ${srv.request.getFunction()?.getName()}`);
+    throw new Error('Data streaming is not yet implemented');
+  }
+
+  public async subscriptionConnection(
+    call: grpc.ServerUnaryCall<SubscriptionConnectionRequest>,
+    callback: grpc.sendUnaryData<SubscriptionConnectionResponse>,
+  ): Promise<void> {
+    return this.executeUserHandler(call, callback, SubscriptionConnectionResponse, subscriptionConnection);
+  }
+
+  public async subscriptionListen(srv: grpc.ServerWritableStream<SubscriptionListenRequest>): Promise<void> {
+    this.hookIO();
+    try {
+      const handler = await getHandler<SubscriptionListenInput, void, SubscriptionListenEmitter>(srv.request);
+      await subscritpionListen(srv, handler);
+    } catch (e) {
+      console.error(e);
+    }
+    this.unhookIO();
+  }
   public start(): void {
     try {
       this.server.start();
@@ -276,12 +310,10 @@ export class Server {
       throw new Error('TLS certificate chain defined partially');
     }
     const rootCert = readFileSync(rootCerts);
-    /* eslint-disable @typescript-eslint/camelcase */
     const certs: grpc.KeyCertPair = {
       cert_chain: readFileSync(certChain),
       private_key: readFileSync(privateKey),
     };
-    /* eslint-enable @typescript-eslint/camelcase */
     return grpc.ServerCredentials.createSsl(rootCert, [certs], checkClientCertificate);
   }
 

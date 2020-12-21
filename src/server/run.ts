@@ -50,7 +50,7 @@ export const runPluginWith = (server: StoppableServer) => {
   };
 };
 
-export const run = (opts?: RunOptions): void => {
+export const run = (opts: RunOptions = {}): void => {
   const grpcServerOpts = {
     ...(opts.maxMessageSize && {
       'grpc.max_send_message_length': opts.maxMessageSize,

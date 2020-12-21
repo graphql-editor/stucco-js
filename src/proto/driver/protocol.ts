@@ -1,6 +1,6 @@
-import { HttpRequest } from "src/api";
-import { RecordOfUnknown, getFromValue } from "./value";
-import { Value } from "../driver_pb";
+import { HttpRequest } from 'src/api';
+import { RecordOfUnknown, getFromValue } from './value';
+import { Value } from '../driver_pb';
 
 function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
   if (typeof protocol !== 'object' || protocol === null) {
@@ -23,14 +23,14 @@ function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
       return header.find((el) => typeof el !== 'string');
     }) === undefined
   );
-};
+}
 
 interface WithProtocol {
   hasProtocol(): boolean;
-  getProtocol(): Value;
+  getProtocol(): Value | undefined;
 }
 export function getProtocol(req: WithProtocol): HttpRequest | undefined {
-  if(!req.hasProtocol()) {
+  if (!req.hasProtocol()) {
     return undefined;
   }
   const protocol = getFromValue(req.getProtocol());

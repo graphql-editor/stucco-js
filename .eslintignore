@@ -1,5 +1,4 @@
-src/proto/*
-node_modules
-lib
-coverage
-lib/*.js
+src/proto/driver_grpc_pb.d.ts
+src/proto/driver_pb.d.ts
+src/proto/driver_pb.js
+src/proto/driver_grpc_pb.js

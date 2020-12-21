@@ -15,17 +15,16 @@ module.exports = {
   plugins: ['@typescript-eslint', 'prettier'],
   overrides: [
     {
-      files: ["**/*.ts"],
+      files: ['**/*.ts'],
       parser: '@typescript-eslint/parser', // Specifies the ESLint parser
       extends: [
         'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
         'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
       ],
       rules: {
-          "no-dupe-class-members": "off",
-          "@typescript-eslint/no-dupe-class-members": ["error"]
-      }
+        'no-dupe-class-members': 'off',
+        '@typescript-eslint/no-dupe-class-members': ['error'],
+      },
     },
   ],
 };
-

@@ -1,6 +1,7 @@
 {
     "compileOnSave": false,
     "compilerOptions": {
+        "strict":true,
         "baseUrl": ".",
         "outDir": "./lib",
         "rootDir": "./src",
@@ -16,7 +17,7 @@
         "experimentalDecorators": true,
         "target": "es2017",
         "typeRoots": ["./node_modules/@types", "./src/typings"],
-        "types": ["node", "jest"],
+        "types": ["node", "jest"]
     },
   "include": ["./src/**/*"],
   "exclude": ["node_modules"]

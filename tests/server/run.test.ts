@@ -54,7 +54,7 @@ describe('local plugin server', () => {
     expect(mockProcessSignals.on.mock.calls[0][1]).toBeInstanceOf(Function);
     expect(mockProcessSignals.on.mock.calls[1][0]).toEqual('SIGTERM');
     expect(mockProcessSignals.on.mock.calls[1][1]).toBeInstanceOf(Function);
-    const stopCallback: () => {} = mockProcessSignals.on.mock.calls[0][1];
+    const stopCallback: () => unknown = mockProcessSignals.on.mock.calls[0][1];
     stopCallback();
     expect(mockProcessSignals.removeListener).toBeCalledTimes(2);
     expect(mockProcessSignals.removeListener.mock.calls[0][0]).toEqual('SIGINT');

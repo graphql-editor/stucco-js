@@ -1,3 +1,4 @@
+import * as grpc from 'grpc';
 import {
   FieldResolveInput,
   FieldResolveOutput,
@@ -13,17 +14,41 @@ import {
   ScalarSerializeOutput,
   UnionResolveTypeInput,
   UnionResolveTypeOutput,
-  VariableDefinition as APIVariableDefinition,
-  VariableDefinitions as APIVariableDefinitions,
   TypeRef as APITypeRef,
+  SubscriptionConnectionInput,
+  SubscriptionConnectionOutput,
+  SubscriptionListenInput,
+  SubscriptionListenEmitter,
 } from '../../api';
-import { Value, FieldResolveInfo, ResponsePath, OperationDefinition, VariableDefinition, TypeRef, FieldResolveRequest, FieldResolveResponse, Error as DriverError, InterfaceResolveTypeRequest, InterfaceResolveTypeResponse, SetSecretsRequest, SetSecretsResponse, ScalarParseRequest, ScalarParseResponse, ScalarSerializeRequest, ScalarSerializeResponse, UnionResolveTypeRequest, UnionResolveTypeResponse } from "../driver_pb";
+import {
+  Value,
+  FieldResolveInfo,
+  TypeRef,
+  FieldResolveRequest,
+  FieldResolveResponse,
+  Error as DriverError,
+  InterfaceResolveTypeRequest,
+  InterfaceResolveTypeResponse,
+  SetSecretsRequest,
+  SetSecretsResponse,
+  ScalarParseRequest,
+  ScalarParseResponse,
+  ScalarSerializeRequest,
+  ScalarSerializeResponse,
+  UnionResolveTypeRequest,
+  UnionResolveTypeResponse,
+  SubscriptionConnectionRequest,
+  SubscriptionConnectionResponse,
+  SubscriptionListenRequest,
+  SubscriptionListenMessage,
+} from '../driver_pb';
 import { RecordOfUnknown, RecordOfValues, getFromValue, getRecordFromValueMap, valueFromAny } from './value';
 import { getProtocol } from './protocol';
 import { getSource } from './source';
 import { buildTypeRef } from './type_ref';
 import { buildResponsePath } from './response_path';
 import { buildOperationDefinition } from './operation';
+import { EventEmitter } from 'events';
 
 interface ProtoInfoLike {
   getFieldname: typeof FieldResolveInfo.prototype.getFieldname;
@@ -70,7 +95,6 @@ function isType(
   );
 }
 
-
 interface HasError {
   error: Error;
 }
@@ -98,25 +122,29 @@ const isResponse = (
 ): v is Response =>
   typeof v === 'object' && !!v && 'response' in v && typeof (v as { response?: unknown }).response !== 'undefined';
 
-
 function mapVariables(infoLike: ProtoInfoLike): RecordOfValues {
-    if (!infoLike.hasOperation()) {
-        return {};
-    }
-    const op = infoLike.getOperation();
-    if (!op) {
-        return {};
-    }
-    const values = infoLike.getVariablevaluesMap();
-    return op
-      .getVariabledefinitionsList()
-      .filter(v => v.getVariable())
-      .reduce((pv, cv) => {
-          const variable = cv.getVariable();
-          const name = variable.getName();
-          pv[name] = values.get(name) || cv.getDefaultvalue();
-          return pv;
-      }, {} as RecordOfValues);
+  if (!infoLike.hasOperation()) {
+    return {};
+  }
+  const op = infoLike.getOperation();
+  if (!op) {
+    return {};
+  }
+  const values = infoLike.getVariablevaluesMap();
+  return op
+    .getVariabledefinitionsList()
+    .filter((v) => v.getVariable())
+    .reduce((pv, cv) => {
+      const name = cv.getVariable()?.getName();
+      if (!name) {
+        return pv;
+      }
+      const v = values.get(name) || cv.getDefaultvalue();
+      if (v) {
+        pv[name] = v;
+      }
+      return pv;
+    }, {} as RecordOfValues);
 }
 
 function mustGetInfo(req: { getInfo: () => ProtoInfoLike | undefined }): ProtoInfoLike {
@@ -129,43 +157,20 @@ function mustGetInfo(req: { getInfo: () => ProtoInfoLike | undefined }): ProtoIn
 
 function protoInfoLikeToInfoLike(info: ProtoInfoLike, variables: RecordOfValues): InfoLike {
   const operation = info.hasOperation() && buildOperationDefinition(info.getOperation(), variables);
-
   const parentType = info.hasParenttype && buildTypeRef(info.getParenttype());
-
   const path = info.hasPath() && buildResponsePath(info.getPath());
-
   const variableValues = getRecordFromValueMap(info.getVariablevaluesMap());
-
   return {
-    ...(operation && {operation}),
-    ...(parentType && {parentType}),
-    ...(path && {path}),
-    ...(Object.keys(variableValues).length > 0 && {variableValues}),
+    ...(operation && { operation }),
+    ...(parentType && { parentType }),
+    ...(path && { path }),
+    ...(Object.keys(variableValues).length > 0 && { variableValues }),
     fieldName: info.getFieldname(),
     returnType: buildTypeRef(info.getReturntype()),
   };
 }
 
-function makeFieldResolveInput(req: FieldResolveRequest): FieldResolveInput {
-  const info = mustGetInfo(req);
-  const variables = mapVariables(info);
-  const protocol = getProtocol(req);
-  const source = getSource(req);
-  const args = getRecordFromValueMap(req.getArgumentsMap(), variables);
-  return {
-    ...(Object.keys(args).length > 0 && {arguments: args}),
-    ...(protocol && {protocol}),
-    ...(typeof source !== 'undefined' && {source}),
-    info: protoInfoLikeToInfoLike(info, variables),
-  };
-}
-
-function valueFromResponse(
-  out?:
-    | (RecordOfUnknown & ResponseLike)
-    | (() => unknown)
-    | unknown,
-): Value | undefined {
+function valueFromResponse(out?: (RecordOfUnknown & ResponseLike) | (() => unknown) | unknown): Value | undefined {
   if (!isResponse(out) && !hasError(out)) {
     out = { response: out };
   }
@@ -182,239 +187,329 @@ function errorFromHandlerError(err: Error): DriverError | undefined {
   return protoErr;
 }
 
-function setResponseResponse(
-  resp: {
-    setResponse: (value?: Value) => void;
-  },
-  out?:
-    | ResponseLike 
-    | (() => unknown)
-    | unknown,
-): void {
-  const val = valueFromResponse(out);
-  if (val) {
-    resp.setResponse(val);
-  }
-}
+const hasMessage = (e: unknown): e is { message: string } =>
+  !!e && typeof e === 'object' && typeof (e as { message: unknown }).message === 'string';
 
-function setResponseType(
-  resp: {
-    setType: (value?: TypeRef) => void;
-  },
-  out?:
-    | {
-        type?: string | (() => string);
-        error?: Error;
-      }
-    | string
-    | (() => string),
-): void {
-  if (typeof out === 'function') {
-    out = { type: out() };
-  } else if (typeof out === 'string') {
-    out = { type: out };
-  }
-  let type = '';
-  if (isType(out)) {
-    if (typeof out.type === 'function') {
-      out.type = out.type();
-    }
-    type = out.type;
-  }
-  if (!type) {
-    if (hasError(out)) {
-      return;
-    }
-    throw new Error('type cannot be empty');
-  }
-  const t = new TypeRef();
-  t.setName(type);
-  resp.setType(t);
-}
-
-function setResponseValue(
-  resp: {
-    setValue: (value?: Value) => void;
-  },
-  out?:
-    | {
-        response?: unknown | (() => unknown);
-        error?: Error;
-      }
-    | (() => unknown)
-    | unknown,
-): void {
-  const val = valueFromResponse(out);
-  if (val) {
-    resp.setValue(val);
-  }
-}
-
-
-const setResponseError = (
-  resp: {
-    setError: (value?: DriverError) => void;
-  },
-  out?:
-    | {
-        error?: Error;
-      }
-    | unknown,
-): void => hasError(out) && resp.setError(errorFromHandlerError(out.error));
-
-const hasMessage = (e: unknown): e is {message: string} =>
-  !!e && typeof e === 'object' && typeof (e as {message: unknown}).message === 'string'
-
-export function makeProtoError(e: {message:string} | unknown): DriverError {
-  const err = new DriverError()
-  let msg = 'unknown error'
+export function makeProtoError(e: { message: string } | unknown): DriverError {
+  const err = new DriverError();
+  let msg = 'unknown error';
   if (hasMessage(e)) {
-    msg = e.message
+    msg = e.message;
   }
   err.setMsg(msg);
-  return err
+  return err;
 }
 
-async function callHandler<ResponseType extends {
-    setError: (value?: DriverError) => void;
-  },
-  ResponseDataType,
+interface HandlerResponse<RequestType, DriverInput, DriverOutput> {
+  set(_2: DriverOutput): void;
+  input(req: RequestType): DriverInput;
+  setError: (value?: DriverError) => void;
+}
+
+async function callHandler<
   RequestType,
   DriverInput,
   DriverOutput,
->(responseCtor: {
-  new(): ResponseType,
-  setResponseData(ResponseType, ResponseDataType),
-},
-  makeInputFunc: (req: RequestType) => DriverInput,
-  handler: (x: DriverInput) => Promise<DriverOutput>,
-  request: RequestType,
-): Promise<ResponseType> {
-  const response = new responseCtor();
+  ResponseType extends HandlerResponse<RequestType, DriverInput, DriverOutput>
+>(resp: ResponseType, handler: (x: DriverInput) => Promise<DriverOutput>, request: RequestType): Promise<ResponseType> {
   try {
-    const out = await handler(makeInputFunc(request));
-    responseCtor.setResponseData(response, out);
-    setResponseError(response, out);
-  } catch(e) {
-    response.setError(makeProtoError(e));
+    const out = await handler(resp.input(request));
+    resp.set(out);
+    if (hasError(out)) {
+      resp.setError(errorFromHandlerError(out.error));
+    }
+  } catch (e) {
+    resp.setError(makeProtoError(e));
   }
-  return response;
+  return resp;
 }
 
 class SettableFieldResolveResponse extends FieldResolveResponse {
-  static setResponseData = setResponseResponse;
+  set(out?: ResponseLike | (() => unknown) | unknown): void {
+    const val = valueFromResponse(out);
+    if (val) {
+      this.setResponse(val);
+    }
+  }
+  input(req: FieldResolveRequest): FieldResolveInput {
+    const info = mustGetInfo(req);
+    const variables = mapVariables(info);
+    const protocol = getProtocol(req);
+    const source = getSource(req);
+    const args = getRecordFromValueMap(req.getArgumentsMap(), variables);
+    return {
+      ...(Object.keys(args).length > 0 && { arguments: args }),
+      ...(protocol && { protocol }),
+      ...(typeof source !== 'undefined' && { source }),
+      info: protoInfoLikeToInfoLike(info, variables),
+    };
+  }
 }
 
-class SettableInterfaceResolveTypeResponse extends InterfaceResolveTypeResponse {
-  static setResponseData = setResponseType
+interface SettableResolveTypeResponseInputReturn {
+  info: InfoLike;
+  value?: unknown;
 }
+type SettableResolveTypeResponseSetOutArg =
+  | {
+      type?: string | (() => string);
+      error?: Error;
+    }
+  | (() => string)
+  | string;
 
-class SettableScalarParseResponse extends ScalarParseResponse {
-  static setResponseData = setResponseValue;
+interface SettableResolveTypeResponseType<T> {
+  setType(t: TypeRef | undefined): unknown;
+  set(out?: SettableResolveTypeResponseSetOutArg): unknown;
+  input(req: T): SettableResolveTypeResponseInputReturn;
 }
-
-class SettableScalarSerializeResponse extends ScalarSerializeResponse {
-  static setResponseData = setResponseValue
-}
-
-class SettableUnionResolveTypeResponse extends UnionResolveTypeResponse {
-  static setResponseData = setResponseType
-}
-
-export const fieldResolve = (req: FieldResolveRequest, handler: (x: FieldResolveInput) => Promise<FieldResolveOutput>): Promise<FieldResolveResponse> =>
-  callHandler(
-    SettableFieldResolveResponse,
-    makeFieldResolveInput,
-    handler,
-    req,
-  )
-
-function makeInterfaceResolveTypeInput(req: InterfaceResolveTypeRequest): InterfaceResolveTypeInput {
+class SettableResolveTypeResponse<
+  T extends {
+    getInfo: () => ProtoInfoLike | undefined;
+    getValue: () => Value | undefined;
+  }
+> {
+  constructor(private typeResponse: SettableResolveTypeResponseType<T>) {}
+  set(out?: SettableResolveTypeResponseSetOutArg): void {
+    if (typeof out === 'function') {
+      out = { type: out() };
+    } else if (typeof out === 'string') {
+      out = { type: out };
+    }
+    let type = '';
+    if (isType(out)) {
+      if (typeof out.type === 'function') {
+        out.type = out.type();
+      }
+      type = out.type;
+    }
+    if (!type) {
+      if (hasError(out)) {
+        return;
+      }
+      throw new Error('type cannot be empty');
+    }
+    const t = new TypeRef();
+    t.setName(type);
+    this.typeResponse.setType(t);
+  }
+  input(req: T): SettableResolveTypeResponseInputReturn {
     const info = mustGetInfo(req);
     const variables = mapVariables(info);
     return {
       info: protoInfoLikeToInfoLike(info, variables),
       value: getFromValue(req.getValue()),
     };
+  }
 }
+
+class SettableInterfaceResolveTypeResponse extends InterfaceResolveTypeResponse {
+  _impl: SettableResolveTypeResponse<InterfaceResolveTypeRequest>;
+  constructor() {
+    super();
+    this._impl = new SettableResolveTypeResponse(this);
+  }
+  set(out?: SettableResolveTypeResponseSetOutArg): void {
+    this._impl.set(out);
+  }
+  input(req: InterfaceResolveTypeRequest): InterfaceResolveTypeInput {
+    return this._impl.input(req);
+  }
+}
+
+class SettableUnionResolveTypeResponse extends UnionResolveTypeResponse {
+  _impl: SettableResolveTypeResponse<UnionResolveTypeRequest>;
+  constructor() {
+    super();
+    this._impl = new SettableResolveTypeResponse(this);
+  }
+  set(out?: SettableResolveTypeResponseSetOutArg): void {
+    this._impl.set(out);
+  }
+  input(req: UnionResolveTypeRequest): UnionResolveTypeInput {
+    return this._impl.input(req);
+  }
+}
+
+class SettableSecretsResponse extends SetSecretsResponse {
+  set(): void {
+    // no op, implements SetSecretsResponse
+  }
+  input(req: SetSecretsRequest): SetSecretsInput {
+    return req.getSecretsList().reduce(
+      (pv, cv) => {
+        pv.secrets[cv.getKey()] = cv.getValue();
+        return pv;
+      },
+      {
+        secrets: {} as Record<string, string>,
+      },
+    );
+  }
+}
+
+interface SettableScalarResponseInputReturn {
+  value: unknown;
+}
+
+type SettableScalarResponseSetOutArg =
+  | {
+      value?: Value | (() => Value);
+      error?: Error;
+    }
+  | (() => string)
+  | string;
+
+interface SettableScalarResponseValue<T> {
+  setValue(v?: Value): unknown;
+  set(out?: SettableScalarResponseSetOutArg): unknown;
+  input(req: T): SettableScalarResponseInputReturn;
+}
+class SettableScalarResponse<
+  T extends {
+    getValue: () => Value | undefined;
+  }
+> {
+  constructor(private typeResponse: SettableScalarResponseValue<T>) {}
+  set(out?: SettableScalarResponseSetOutArg): void {
+    const val = valueFromResponse(out);
+    if (val) {
+      this.typeResponse.setValue(val);
+    }
+  }
+  input(req: T): SettableScalarResponseInputReturn {
+    return {
+      value: getFromValue(req.getValue()),
+    };
+  }
+}
+
+class SettableScalarParseResponse extends ScalarParseResponse {
+  _impl: SettableScalarResponse<ScalarParseRequest>;
+  constructor() {
+    super();
+    this._impl = new SettableScalarResponse(this);
+  }
+  set(out?: SettableScalarResponseSetOutArg): void {
+    return this._impl.set(out);
+  }
+  input(req: ScalarParseRequest): ScalarParseInput {
+    return this._impl.input(req);
+  }
+}
+
+class SettableScalarSerializeResponse extends ScalarSerializeResponse {
+  _impl: SettableScalarResponse<ScalarSerializeRequest>;
+  constructor() {
+    super();
+    this._impl = new SettableScalarResponse(this);
+  }
+  set(out?: SettableScalarResponseSetOutArg): void {
+    return this._impl.set(out);
+  }
+  input(req: ScalarSerializeRequest): ScalarSerializeInput {
+    return this._impl.input(req);
+  }
+}
+
+class SettableSubcriptionConnectionResponse extends SubscriptionConnectionResponse {
+  set(out?: ResponseLike | (() => unknown) | unknown): void {
+    const val = valueFromResponse(out);
+    if (val) {
+      this.setResponse(val);
+    }
+  }
+  input(req: SubscriptionConnectionRequest): SubscriptionConnectionInput {
+    const variableValues = getRecordFromValueMap(req.getVariablevaluesMap());
+    const protocol = getProtocol(req);
+    const query = req.getQuery();
+    const operationName = req.getOperationname();
+    return {
+      query,
+      variableValues,
+      operationName,
+      protocol,
+    };
+  }
+}
+
+export const fieldResolve = (
+  req: FieldResolveRequest,
+  handler: (x: FieldResolveInput) => Promise<FieldResolveOutput>,
+): Promise<FieldResolveResponse> => callHandler(new SettableFieldResolveResponse(), handler, req);
 
 export const interfaceResolveType = (
   req: InterfaceResolveTypeRequest,
   handler: (x: InterfaceResolveTypeInput) => Promise<InterfaceResolveTypeOutput | undefined>,
-): Promise<InterfaceResolveTypeResponse> =>
-  callHandler(
-    SettableInterfaceResolveTypeResponse,
-    makeInterfaceResolveTypeInput,
-    handler,
-    req,
-  )
+): Promise<InterfaceResolveTypeResponse> => callHandler(new SettableInterfaceResolveTypeResponse(), handler, req);
 
-export async function setSecrets(
+export const setSecrets = (
   req: SetSecretsRequest,
   handler: (x: SetSecretsInput) => Promise<SetSecretsOutput>,
-): Promise<SetSecretsResponse> {
-  const response = new SetSecretsResponse();
-  try {
-    const secretsInput: SetSecretsInput = {
-      secrets: {},
-    }
-    req.getSecretsList().forEach(secret => {
-      secretsInput.secrets[secret.getKey()] = secret.getValue();
-    })
-    const out = await handler(secretsInput);
-    setResponseError(response, out);
-  } catch (e) {
-      response.setError(makeProtoError(e))
-  }
-  return response
-}
-
-const makeScalarParseInput = (req: ScalarParseRequest): ScalarParseInput => ({
-  value: getFromValue(req.getValue()),
-})
+): Promise<SetSecretsResponse> => callHandler(new SettableSecretsResponse(), handler, req);
 
 export const scalarParse = (
   req: ScalarParseRequest,
   handler: (x: ScalarParseInput) => Promise<ScalarParseOutput>,
-): Promise<ScalarParseResponse> =>
-  callHandler(
-    SettableScalarParseResponse,
-    makeScalarParseInput,
-    handler,
-    req,
-  )
-
-const makeScalarSerializeInput = (req: ScalarSerializeRequest): ScalarSerializeInput => ({
-  value: getFromValue(req.getValue()),
-})
+): Promise<ScalarParseResponse> => callHandler(new SettableScalarParseResponse(), handler, req);
 
 export const scalarSerialize = (
   req: ScalarSerializeRequest,
   handler: (x: ScalarSerializeInput) => Promise<ScalarSerializeOutput>,
-): Promise<ScalarSerializeResponse> =>
-  callHandler(
-    SettableScalarSerializeResponse,
-    makeScalarSerializeInput,
-    handler,
-    req,
-  )
-
-function makeUnionResolveTypeInput(req: UnionResolveTypeRequest): UnionResolveTypeInput {
-    const info = mustGetInfo(req);
-    const variables = mapVariables(info);
-    return {
-      info: protoInfoLikeToInfoLike(info, variables),
-      value: getFromValue(req.getValue()),
-    };
-}
+): Promise<ScalarSerializeResponse> => callHandler(new SettableScalarSerializeResponse(), handler, req);
 
 export const unionResolveType = (
   req: UnionResolveTypeRequest,
   handler: (x: UnionResolveTypeInput) => Promise<UnionResolveTypeOutput | undefined>,
-): Promise<UnionResolveTypeResponse> => 
-  callHandler(
-    SettableUnionResolveTypeResponse,
-    makeUnionResolveTypeInput,
-    handler,
-    req,
-  )
+): Promise<UnionResolveTypeResponse> => callHandler(new SettableUnionResolveTypeResponse(), handler, req);
+
+export const subscriptionConnection = (
+  req: SubscriptionConnectionRequest,
+  handler: (x: SubscriptionConnectionInput) => Promise<SubscriptionConnectionOutput>,
+): Promise<SubscriptionConnectionResponse> => callHandler(new SettableSubcriptionConnectionResponse(), handler, req);
+
+class Emitter {
+  private eventEmitter: EventEmitter;
+  constructor(private srv: grpc.ServerWritableStream<SubscriptionListenRequest>) {
+    this.eventEmitter = new EventEmitter();
+    srv.on('close', () => {
+      this.eventEmitter.emit('close');
+    });
+    srv.on('error', (err: Error) => {
+      this.eventEmitter.emit('close', err);
+    });
+  }
+  async emit(): Promise<void> {
+    const msg = new SubscriptionListenMessage();
+    msg.setNext(true);
+    await new Promise<void>((resolve, reject) =>
+      this.srv.write(msg, (e) => {
+        if (e) {
+          reject(e);
+        }
+        resolve();
+      }),
+    );
+  }
+
+  on(ev: 'close', handler: (err?: Error) => void): void {
+    this.eventEmitter.on(ev, handler);
+  }
+  off(ev: 'close', handler: (err?: Error) => void): void {
+    this.eventEmitter.off(ev, handler);
+  }
+}
+
+export const subscritpionListen = (
+  srv: grpc.ServerWritableStream<SubscriptionListenRequest>,
+  handler: (x: SubscriptionListenInput, emit: SubscriptionListenEmitter) => Promise<void>,
+): Promise<void> =>
+  handler(
+    {
+      query: srv.request.getQuery(),
+      variableValues: getRecordFromValueMap(srv.request.getVariablevaluesMap()),
+      operationName: srv.request.getOperationname(),
+      protocol: getProtocol(srv.request),
+    },
+    new Emitter(srv),
+  );

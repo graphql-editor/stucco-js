@@ -52,11 +52,11 @@ describe('StreamHook', () => {
     const cb = (): void => {};
     stream.write('hooked', encoding, cb);
     expect(nodejsStreamMockWrite).toHaveBeenLastCalledWith('hooked', encoding, cb);
-    expect(passthroughWrite).toHaveBeenLastCalledWith('hooked');
+    expect(passthroughWrite).toHaveBeenLastCalledWith('hooked', encoding, cb);
     expect(passthroughWrite).toHaveBeenCalledTimes(2);
     stream.write('hooked', cb);
     expect(nodejsStreamMockWrite).toHaveBeenLastCalledWith('hooked', cb);
-    expect(passthroughWrite).toHaveBeenLastCalledWith('hooked');
+    expect(passthroughWrite).toHaveBeenLastCalledWith('hooked', cb);
     expect(passthroughWrite).toHaveBeenCalledTimes(3);
   });
 });

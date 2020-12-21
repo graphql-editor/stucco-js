@@ -75,7 +75,7 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('error');
     mockConsole.trace('trace');
-    traceExpect.call(this, errorCalls[errorCalls.length - 1][0]);
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0]);
     hook.hook();
     mockConsole.log('log');
     expect(mockConsoleFunctions.log).toHaveBeenLastCalledWith('hooked log');
@@ -101,7 +101,7 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('error');
     mockConsole.trace('trace');
-    traceExpect.call(this, errorCalls[errorCalls.length - 1][0]);
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0]);
     hook.delete();
   });
   it('adds level prefix', async () => {
@@ -129,7 +129,7 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('[ERROR]error');
     mockConsole.trace('trace');
-    traceExpect.call(this, errorCalls[errorCalls.length - 1][0], '[TRACE]Trace: trace');
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0], '[TRACE]Trace: trace');
     hook.delete();
   });
   it('Trace without message', async () => {
@@ -146,7 +146,7 @@ describe('ConsoleHook', () => {
     const hook = new ConsoleHook(mockConsole);
     const errorCalls = mockConsoleFunctions.error.mock.calls;
     mockConsole.trace();
-    traceExpect.call(this, errorCalls[errorCalls.length - 1][0], 'Trace');
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0], 'Trace');
     hook.delete();
   });
 });
