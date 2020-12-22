@@ -48,7 +48,7 @@ export class StreamHook extends PassThrough {
   ): ReturnType<WriteFunc> {
     const call = (fn: WriteFunc): ReturnType<WriteFunc> => (arg2 ? fn(arg1, arg2) : fn(arg1));
     if (this.hooked) {
-      call(this.write);
+      call(this.write.bind(this));
     }
     return call(fn);
   }
