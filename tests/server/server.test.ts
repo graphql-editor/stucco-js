@@ -651,36 +651,4 @@ describe('grpc server', () => {
     expect(errorSpy).not.toHaveBeenCalledWith('mocked report');
     errorSpy.mockClear();
   });
-  it('user handler calls hook and unhook io', async () => {
-    const stdoutHook = {
-      on: jest.fn(),
-      removeListener: jest.fn(),
-      hook: jest.fn(),
-      unhook: jest.fn(),
-    };
-    const stderrHook = {
-      on: jest.fn(),
-      removeListener: jest.fn(),
-      hook: jest.fn(),
-      unhook: jest.fn(),
-    };
-    const consoleHook = {
-      hook: jest.fn(),
-      unhook: jest.fn(),
-    };
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server({ stdoutHook, stderrHook, consoleHook });
-    await srv.fieldResolve(
-      {
-        request: new driverPb.FieldResolveRequest(),
-      } as ServerUnaryCall<FieldResolveRequest>,
-      jest.fn(),
-    );
-    expect(stdoutHook.hook).toHaveBeenCalledTimes(1);
-    expect(stdoutHook.unhook).toHaveBeenCalledTimes(1);
-    expect(stderrHook.hook).toHaveBeenCalledTimes(1);
-    expect(stderrHook.unhook).toHaveBeenCalledTimes(1);
-    expect(consoleHook.hook).toHaveBeenCalledTimes(1);
-    expect(consoleHook.unhook).toHaveBeenCalledTimes(1);
-  });
 });

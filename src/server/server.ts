@@ -215,7 +215,6 @@ export class Server {
     },
     fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
   ): Promise<void> {
-    this.hookIO();
     try {
       const handler = await getHandler<V, W>(call.request);
       const response = await fn(call.request, handler);
@@ -225,7 +224,6 @@ export class Server {
       doError(e, response);
       callback(null, response);
     }
-    this.unhookIO();
   }
 
   public async fieldResolve(
@@ -283,17 +281,16 @@ export class Server {
   }
 
   public async subscriptionListen(srv: grpc.ServerWritableStream<SubscriptionListenRequest>): Promise<void> {
-    this.hookIO();
     try {
       const handler = await getHandler<SubscriptionListenInput, void, SubscriptionListenEmitter>(srv.request);
       await subscritpionListen(srv, handler);
     } catch (e) {
       console.error(e);
     }
-    this.unhookIO();
   }
   public start(): void {
     try {
+      this.hookIO();
       this.server.start();
     } catch (e) {
       console.error(e);
@@ -328,6 +325,7 @@ export class Server {
   }
 
   public stop(): Promise<void> {
+    this.unhookIO();
     return new Promise((resolve) =>
       this.server.tryShutdown(() => {
         resolve();
