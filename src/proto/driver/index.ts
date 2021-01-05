@@ -237,11 +237,15 @@ class SettableFieldResolveResponse extends FieldResolveResponse {
     const protocol = getProtocol(req);
     const source = getSource(req);
     const args = getRecordFromValueMap(req.getArgumentsMap(), variables);
+    const rootValue = getFromValue(req.getInfo()?.getRootvalue());
     return {
       ...(Object.keys(args).length > 0 && { arguments: args }),
       ...(protocol && { protocol }),
       ...(typeof source !== 'undefined' && { source }),
-      info: protoInfoLikeToInfoLike(info, variables),
+      info: {
+        ...protoInfoLikeToInfoLike(info, variables),
+        ...(typeof rootValue !== 'undefined' && { rootValue }),
+      },
     };
   }
 }
@@ -479,9 +483,12 @@ class Emitter {
       this.eventEmitter.emit('close', err);
     });
   }
-  async emit(): Promise<void> {
+  async emit(v?: unknown): Promise<void> {
     const msg = new SubscriptionListenMessage();
     msg.setNext(true);
+    if (typeof v !== 'undefined') {
+      msg.setPayload(valueFromAny(v));
+    }
     await new Promise<void>((resolve, reject) =>
       this.srv.write(msg, (e) => {
         if (e) {
@@ -510,6 +517,7 @@ export const subscritpionListen = (
       variableValues: getRecordFromValueMap(srv.request.getVariablevaluesMap()),
       operationName: srv.request.getOperationname(),
       protocol: getProtocol(srv.request),
+      ...(srv.request.hasOperation() && { operation: buildOperationDefinition(srv.request.getOperation(), {}) }),
     },
     new Emitter(srv),
   );

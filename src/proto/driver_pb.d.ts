@@ -537,6 +537,12 @@ export class FieldResolveInfo extends jspb.Message {
     clearVariablevaluesMap(): void;
 
 
+    hasRootvalue(): boolean;
+    clearRootvalue(): void;
+    getRootvalue(): Value | undefined;
+    setRootvalue(value?: Value): FieldResolveInfo;
+
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): FieldResolveInfo.AsObject;
     static toObject(includeInstance: boolean, msg: FieldResolveInfo): FieldResolveInfo.AsObject;
@@ -556,6 +562,7 @@ export namespace FieldResolveInfo {
         operation?: OperationDefinition.AsObject,
 
         variablevaluesMap: Array<[string, Value.AsObject]>,
+        rootvalue?: Value.AsObject,
     }
 }
 
@@ -1367,6 +1374,12 @@ export class SubscriptionListenRequest extends jspb.Message {
     setProtocol(value?: Value): SubscriptionListenRequest;
 
 
+    hasOperation(): boolean;
+    clearOperation(): void;
+    getOperation(): OperationDefinition | undefined;
+    setOperation(value?: OperationDefinition): SubscriptionListenRequest;
+
+
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): SubscriptionListenRequest.AsObject;
     static toObject(includeInstance: boolean, msg: SubscriptionListenRequest): SubscriptionListenRequest.AsObject;
@@ -1385,12 +1398,19 @@ export namespace SubscriptionListenRequest {
         variablevaluesMap: Array<[string, Value.AsObject]>,
         operationname: string,
         protocol?: Value.AsObject,
+        operation?: OperationDefinition.AsObject,
     }
 }
 
 export class SubscriptionListenMessage extends jspb.Message { 
     getNext(): boolean;
     setNext(value: boolean): SubscriptionListenMessage;
+
+
+    hasPayload(): boolean;
+    clearPayload(): void;
+    getPayload(): Value | undefined;
+    setPayload(value?: Value): SubscriptionListenMessage;
 
 
     serializeBinary(): Uint8Array;
@@ -1406,5 +1426,6 @@ export class SubscriptionListenMessage extends jspb.Message {
 export namespace SubscriptionListenMessage {
     export type AsObject = {
         next: boolean,
+        payload?: Value.AsObject,
     }
 }

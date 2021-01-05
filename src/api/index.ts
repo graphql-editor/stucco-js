@@ -84,6 +84,7 @@ export interface FieldResolveInfo {
   parentType?: TypeRef;
   operation?: OperationDefinition;
   variableValues?: Record<string, unknown>;
+  rootValue?: unknown;
 }
 
 export interface FieldResolveInput<Arguments = Record<string, unknown> | undefined, Source = unknown | undefined> {
@@ -187,6 +188,7 @@ export interface SubscriptionConnectionInput {
   variableValues?: Record<string, unknown>;
   operationName?: string;
   protocol?: Protocol;
+  operation?: OperationDefinition;
 }
 
 export type SubscriptionConnectionOutput<T = unknown | (() => unknown)> =
@@ -197,7 +199,7 @@ export type SubscriptionConnectionOutput<T = unknown | (() => unknown)> =
   | T;
 
 export interface SubscriptionListenEmitter {
-  emit: () => Promise<void>;
+  emit: (v?: unknown) => Promise<void>;
   on(ev: 'close', handler: (err?: Error) => void): void;
   off(ev: 'close', handler: (err?: Error) => void): void;
 }

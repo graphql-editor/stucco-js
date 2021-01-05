@@ -4028,7 +4028,8 @@ proto.proto.FieldResolveInfo.toObject = function(includeInstance, msg) {
     returntype: (f = msg.getReturntype()) && proto.proto.TypeRef.toObject(includeInstance, f),
     parenttype: (f = msg.getParenttype()) && proto.proto.TypeRef.toObject(includeInstance, f),
     operation: (f = msg.getOperation()) && proto.proto.OperationDefinition.toObject(includeInstance, f),
-    variablevaluesMap: (f = msg.getVariablevaluesMap()) ? f.toObject(includeInstance, proto.proto.Value.toObject) : []
+    variablevaluesMap: (f = msg.getVariablevaluesMap()) ? f.toObject(includeInstance, proto.proto.Value.toObject) : [],
+    rootvalue: (f = msg.getRootvalue()) && proto.proto.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4094,6 +4095,11 @@ proto.proto.FieldResolveInfo.deserializeBinaryFromReader = function(msg, reader)
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readMessage, proto.proto.Value.deserializeBinaryFromReader, "", new proto.proto.Value());
          });
+      break;
+    case 7:
+      var value = new proto.proto.Value;
+      reader.readMessage(value,proto.proto.Value.deserializeBinaryFromReader);
+      msg.setRootvalue(value);
       break;
     default:
       reader.skipField();
@@ -4166,6 +4172,14 @@ proto.proto.FieldResolveInfo.serializeBinaryToWriter = function(message, writer)
   f = message.getVariablevaluesMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(6, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeMessage, proto.proto.Value.serializeBinaryToWriter);
+  }
+  f = message.getRootvalue();
+  if (f != null) {
+    writer.writeMessage(
+      7,
+      f,
+      proto.proto.Value.serializeBinaryToWriter
+    );
   }
 };
 
@@ -4356,6 +4370,43 @@ proto.proto.FieldResolveInfo.prototype.getVariablevaluesMap = function(opt_noLaz
 proto.proto.FieldResolveInfo.prototype.clearVariablevaluesMap = function() {
   this.getVariablevaluesMap().clear();
   return this;};
+
+
+/**
+ * optional Value rootValue = 7;
+ * @return {?proto.proto.Value}
+ */
+proto.proto.FieldResolveInfo.prototype.getRootvalue = function() {
+  return /** @type{?proto.proto.Value} */ (
+    jspb.Message.getWrapperField(this, proto.proto.Value, 7));
+};
+
+
+/**
+ * @param {?proto.proto.Value|undefined} value
+ * @return {!proto.proto.FieldResolveInfo} returns this
+*/
+proto.proto.FieldResolveInfo.prototype.setRootvalue = function(value) {
+  return jspb.Message.setWrapperField(this, 7, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.proto.FieldResolveInfo} returns this
+ */
+proto.proto.FieldResolveInfo.prototype.clearRootvalue = function() {
+  return this.setRootvalue(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.proto.FieldResolveInfo.prototype.hasRootvalue = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
 
 
 
@@ -9529,7 +9580,8 @@ proto.proto.SubscriptionListenRequest.toObject = function(includeInstance, msg) 
     query: jspb.Message.getFieldWithDefault(msg, 2, ""),
     variablevaluesMap: (f = msg.getVariablevaluesMap()) ? f.toObject(includeInstance, proto.proto.Value.toObject) : [],
     operationname: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    protocol: (f = msg.getProtocol()) && proto.proto.Value.toObject(includeInstance, f)
+    protocol: (f = msg.getProtocol()) && proto.proto.Value.toObject(includeInstance, f),
+    operation: (f = msg.getOperation()) && proto.proto.OperationDefinition.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9589,6 +9641,11 @@ proto.proto.SubscriptionListenRequest.deserializeBinaryFromReader = function(msg
       var value = new proto.proto.Value;
       reader.readMessage(value,proto.proto.Value.deserializeBinaryFromReader);
       msg.setProtocol(value);
+      break;
+    case 6:
+      var value = new proto.proto.OperationDefinition;
+      reader.readMessage(value,proto.proto.OperationDefinition.deserializeBinaryFromReader);
+      msg.setOperation(value);
       break;
     default:
       reader.skipField();
@@ -9651,6 +9708,14 @@ proto.proto.SubscriptionListenRequest.serializeBinaryToWriter = function(message
       5,
       f,
       proto.proto.Value.serializeBinaryToWriter
+    );
+  }
+  f = message.getOperation();
+  if (f != null) {
+    writer.writeMessage(
+      6,
+      f,
+      proto.proto.OperationDefinition.serializeBinaryToWriter
     );
   }
 };
@@ -9788,6 +9853,43 @@ proto.proto.SubscriptionListenRequest.prototype.hasProtocol = function() {
 };
 
 
+/**
+ * optional OperationDefinition operation = 6;
+ * @return {?proto.proto.OperationDefinition}
+ */
+proto.proto.SubscriptionListenRequest.prototype.getOperation = function() {
+  return /** @type{?proto.proto.OperationDefinition} */ (
+    jspb.Message.getWrapperField(this, proto.proto.OperationDefinition, 6));
+};
+
+
+/**
+ * @param {?proto.proto.OperationDefinition|undefined} value
+ * @return {!proto.proto.SubscriptionListenRequest} returns this
+*/
+proto.proto.SubscriptionListenRequest.prototype.setOperation = function(value) {
+  return jspb.Message.setWrapperField(this, 6, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.proto.SubscriptionListenRequest} returns this
+ */
+proto.proto.SubscriptionListenRequest.prototype.clearOperation = function() {
+  return this.setOperation(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.proto.SubscriptionListenRequest.prototype.hasOperation = function() {
+  return jspb.Message.getField(this, 6) != null;
+};
+
+
 
 
 
@@ -9820,7 +9922,8 @@ proto.proto.SubscriptionListenMessage.prototype.toObject = function(opt_includeI
  */
 proto.proto.SubscriptionListenMessage.toObject = function(includeInstance, msg) {
   var f, obj = {
-    next: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    next: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    payload: (f = msg.getPayload()) && proto.proto.Value.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -9861,6 +9964,11 @@ proto.proto.SubscriptionListenMessage.deserializeBinaryFromReader = function(msg
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNext(value);
       break;
+    case 2:
+      var value = new proto.proto.Value;
+      reader.readMessage(value,proto.proto.Value.deserializeBinaryFromReader);
+      msg.setPayload(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -9897,6 +10005,14 @@ proto.proto.SubscriptionListenMessage.serializeBinaryToWriter = function(message
       f
     );
   }
+  f = message.getPayload();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      proto.proto.Value.serializeBinaryToWriter
+    );
+  }
 };
 
 
@@ -9915,6 +10031,43 @@ proto.proto.SubscriptionListenMessage.prototype.getNext = function() {
  */
 proto.proto.SubscriptionListenMessage.prototype.setNext = function(value) {
   return jspb.Message.setProto3BooleanField(this, 1, value);
+};
+
+
+/**
+ * optional Value payload = 2;
+ * @return {?proto.proto.Value}
+ */
+proto.proto.SubscriptionListenMessage.prototype.getPayload = function() {
+  return /** @type{?proto.proto.Value} */ (
+    jspb.Message.getWrapperField(this, proto.proto.Value, 2));
+};
+
+
+/**
+ * @param {?proto.proto.Value|undefined} value
+ * @return {!proto.proto.SubscriptionListenMessage} returns this
+*/
+proto.proto.SubscriptionListenMessage.prototype.setPayload = function(value) {
+  return jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.proto.SubscriptionListenMessage} returns this
+ */
+proto.proto.SubscriptionListenMessage.prototype.clearPayload = function() {
+  return this.setPayload(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.proto.SubscriptionListenMessage.prototype.hasPayload = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 

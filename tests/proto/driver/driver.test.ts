@@ -216,6 +216,15 @@ const expectedVariableValues = {
 const setVariableValues = (v: { getVariablevaluesMap(): jspb.Map<string, Value> }): jspb.Map<string, Value> =>
   v.getVariablevaluesMap().set('variable', stringValue('value'));
 
+interface InfoLike {
+  setFieldname(v: string): void;
+  setOperation(odef: OperationDefinition): void;
+  setParenttype(tr: TypeRef): void;
+  setReturntype(tr: TypeRef): void;
+  setPath(rp: ResponsePath): void;
+  getVariablevaluesMap(): jspb.Map<string, Value>;
+}
+
 const expectedInfo = {
   fieldName: 'field',
   operation: expectedOperation,
@@ -224,12 +233,12 @@ const expectedInfo = {
   path: expectedResponsePath,
   variableValues: expectedVariableValues,
 };
-function setInfo<T extends FieldResolveInfo | InterfaceResolveTypeInfo | UnionResolveTypeInfo>(
+function setInfo<T extends InfoLike & U, U>(
   infoCtor: {
     new (): T;
   },
   req: {
-    setInfo(info: T): void;
+    setInfo(info: U): void;
   },
 ): void {
   const info = new infoCtor();
