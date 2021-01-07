@@ -208,6 +208,7 @@ export interface SubscriptionListenInput {
   variableValues?: Record<string, unknown>;
   operationName?: string;
   protocol?: Protocol;
+  operation?: OperationDefinition;
 }
 
 export type FieldResolveHandler = (input: FieldResolveInput) => FieldResolveOutput;
