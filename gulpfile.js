@@ -8,8 +8,10 @@ gulp.task('ts-compile', () => {
   return Promise.all([result.js.pipe(gulp.dest('lib')), result.dts.pipe(gulp.dest('lib'))]);
 });
 
+gulp.task('copy-cmd', () => gulp.src('./src/cli/cli.cmd').pipe(gulp.dest('./lib/cli')));
+
 gulp.task('proto', () => {
   return gulp.src(['src/proto/**/*.js']).pipe(gulp.dest('lib/proto'));
 });
 
-gulp.task('default', gulp.parallel(['proto', 'ts-compile']));
+gulp.task('default', gulp.parallel(['proto', 'ts-compile', 'copy-cmd']));

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { StreamHook } from './hook_stream';
 
 const stdout = new StreamHook(process.stdout);
@@ -51,35 +50,24 @@ export const runPluginWith = (server: StoppableServer) => {
 };
 
 export const run = (opts: RunOptions = {}): void => {
-  const grpcServerOpts = {
-    ...(opts.maxMessageSize && {
-      'grpc.max_send_message_length': opts.maxMessageSize,
-      'grpc.max_receive_message_length': opts.maxMessageSize,
-    }),
-  };
-  const serverOptions: Record<string, unknown> = {
-    ...opts,
-    stdoutHook: stdout,
-    stderrHook: stderr,
-    consoleHook: consoleHook,
-    grpcServerOpts,
-  };
-  return runPluginWith(new Server(serverOptions))(opts);
-};
-
-if (require.main === module) {
   try {
-    const opts: RunOptions = {
-      enableProfiling: process.env.STUCCO_JS_PROFILE === '1' || process.env.STUCCO_JS_PROFILE === 'true',
+    const grpcServerOpts = {
+      ...(opts.maxMessageSize && {
+        'grpc.max_send_message_length': opts.maxMessageSize,
+        'grpc.max_receive_message_length': opts.maxMessageSize,
+      }),
     };
-    const maxMessageSize = process.env.STUCCO_MAX_MESSAGE_SIZE;
-    if (maxMessageSize) {
-      opts.maxMessageSize = parseInt(maxMessageSize);
-    }
-    run(opts);
+    const serverOptions: Record<string, unknown> = {
+      ...opts,
+      stdoutHook: stdout,
+      stderrHook: stderr,
+      consoleHook: consoleHook,
+      grpcServerOpts,
+    };
+    return runPluginWith(new Server(serverOptions))(opts);
   } catch (e) {
     stderr.unhook();
     consoleHook.unhook();
     console.error(e);
   }
-}
+};
