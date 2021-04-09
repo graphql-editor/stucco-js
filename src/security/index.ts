@@ -22,7 +22,7 @@ export function DefaultSecurity(secRequired = false): MultiAuth | void {
     authHandlers.push(new ClientCertAuth(new HttpCertReader()));
   }
   if (process.env['STUCCO_FUNCTION_KEY']) {
-    authHandlers.push(new ApiKeyAuth());
+    authHandlers.push(new ApiKeyAuth(process.env['STUCCO_FUNCTION_KEY']));
   }
   if (authHandlers.length == 0) {
     if (secRequired) throw new Error('could not create default funciton security');
