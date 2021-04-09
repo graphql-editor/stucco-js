@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import yargs from 'yargs';
-import { extensions } from './util';
+import * as azure from './cmds/azure';
+import * as config from './cmds/config';
+import * as plugin from './cmds/plugin';
 
 // Plugin compatibility
 let args = process.argv.slice(2);
 if (args.length === 0) {
   args = ['plugin', 'serve'];
 }
-yargs(args).commandDir('cmds', { extensions }).help().argv;
+yargs(args).command([azure, config, plugin]).help().argv;
