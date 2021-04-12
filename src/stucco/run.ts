@@ -27,7 +27,8 @@ export const stucco = async (): Promise<BinWrapper> => {
 if (require.main === module) {
   (async (): Promise<void> => {
     const bin = await stucco();
-    const child = spawn(bin.path(), ['local', 'start'], { stdio: [process.stdin, process.stdout, process.stderr] });
+    const args = process.argv.length > 2 ? process.argv.slice(2) : ['local', 'start'];
+    const child = spawn(bin.path(), args, { stdio: [process.stdin, process.stdout, process.stderr] });
     process.on('SIGTERM', () => {
       child.kill();
     });
