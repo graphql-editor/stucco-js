@@ -1,12 +1,4 @@
-import {
-  ScalarParseResponse,
-  Error as ProtoError,
-  ScalarParseRequest,
-  Function,
-  Value,
-  ScalarSerializeResponse,
-  ScalarSerializeRequest,
-} from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 describe('scalar', () => {
   beforeEach(() => {
     jest.resetModules();
@@ -35,8 +27,8 @@ describe('scalar', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new ScalarParseResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.ScalarParseResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(expectedResponse.serializeBinary(), await scalarParseHandler(tc.contentType, new Uint8Array()));
@@ -46,12 +38,12 @@ describe('scalar', () => {
   });
   it('parse handler calls handler', async () => {
     const { scalarParseHandler } = await import('../../src/raw/scalar');
-    const req = new ScalarParseRequest();
-    const func = new Function();
+    const req = new messages.ScalarParseRequest();
+    const func = new messages.Function();
     func.setName('function');
     req.setFunction(func);
-    const expected = new ScalarParseResponse();
-    const nilObject = new Value();
+    const expected = new messages.ScalarParseResponse();
+    const nilObject = new messages.Value();
     nilObject.setNil(true);
     expected.setValue(nilObject);
     const handler = jest.fn();
@@ -93,8 +85,8 @@ describe('scalar', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new ScalarSerializeResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.ScalarSerializeResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(
@@ -107,12 +99,12 @@ describe('scalar', () => {
   });
   it('serialize handler calls handler', async () => {
     const { scalarSerializeHandler } = await import('../../src/raw/scalar');
-    const req = new ScalarSerializeRequest();
-    const func = new Function();
+    const req = new messages.ScalarSerializeRequest();
+    const func = new messages.Function();
     func.setName('function');
     req.setFunction(func);
-    const expected = new ScalarSerializeResponse();
-    const nilObject = new Value();
+    const expected = new messages.ScalarSerializeResponse();
+    const nilObject = new messages.Value();
     nilObject.setNil(true);
     expected.setValue(nilObject);
     const handler = jest.fn();

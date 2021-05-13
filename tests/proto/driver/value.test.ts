@@ -11,7 +11,7 @@ import {
   objValue,
   variableValue,
 } from './helpers';
-import { Value } from '../../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 
 describe('value marshaling/unmarshaling', () => {
   it('marshals undefined and null', () => {
@@ -48,7 +48,7 @@ describe('value marshaling/unmarshaling', () => {
   });
   it('handles undefined and bad value', () => {
     expect(value.getFromValue(undefined)).toBeUndefined();
-    expect(value.getFromValue(new Value())).toBeUndefined();
+    expect(value.getFromValue(new messages.Value())).toBeUndefined();
   });
   it('unmarshals nil', () => {
     expect(value.getFromValue(nilValue())).toEqual(null);

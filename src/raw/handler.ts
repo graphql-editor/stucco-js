@@ -1,6 +1,6 @@
 import { MessageType, getMessageType, parseMIME } from './message';
 import { getHandler, WithFunction } from '../handler';
-import { Error as ProtoError } from '../proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { makeProtoError } from '../proto/driver';
 
 interface Deserializable<T extends WithFunction> {
@@ -16,7 +16,7 @@ interface Serializable {
 }
 
 interface WithError {
-  setError(err: ProtoError): void;
+  setError(err: messages.Error): void;
 }
 
 export async function handler<T extends WithFunction, U extends Serializable & WithError, V, W>(

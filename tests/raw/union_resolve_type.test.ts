@@ -1,11 +1,4 @@
-import {
-  UnionResolveTypeResponse,
-  Error as ProtoError,
-  UnionResolveTypeRequest,
-  Function,
-  UnionResolveTypeInfo,
-  TypeRef,
-} from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { unionResolveTypeHandler } from '../../src/raw/union_resolve_type';
 describe('raw union resolve type handler', () => {
   beforeEach(() => {
@@ -34,8 +27,8 @@ describe('raw union resolve type handler', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new UnionResolveTypeResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.UnionResolveTypeResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(
@@ -47,13 +40,13 @@ describe('raw union resolve type handler', () => {
     );
   });
   it('calls handler', async () => {
-    const req = new UnionResolveTypeRequest();
-    req.setInfo(new UnionResolveTypeInfo());
-    const func = new Function();
+    const req = new messages.UnionResolveTypeRequest();
+    req.setInfo(new messages.UnionResolveTypeInfo());
+    const func = new messages.Function();
     func.setName('function');
     req.setFunction(func);
-    const expected = new UnionResolveTypeResponse();
-    const typeRef = new TypeRef();
+    const expected = new messages.UnionResolveTypeResponse();
+    const typeRef = new messages.TypeRef();
     typeRef.setName('SomeType');
     expected.setType(typeRef);
     const handler = jest.fn(() => 'SomeType');

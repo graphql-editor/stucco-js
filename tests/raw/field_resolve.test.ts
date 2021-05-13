@@ -1,11 +1,4 @@
-import {
-  FieldResolveResponse,
-  Error as ProtoError,
-  FieldResolveRequest,
-  Function,
-  Value,
-  FieldResolveInfo,
-} from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { fieldResolveHandler } from '../../src/raw/field_resolve';
 describe('raw field resolve handler', () => {
   beforeEach(() => {
@@ -34,8 +27,8 @@ describe('raw field resolve handler', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new FieldResolveResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.FieldResolveResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(expectedResponse.serializeBinary(), await fieldResolveHandler(tc.contentType, new Uint8Array()));
@@ -44,13 +37,13 @@ describe('raw field resolve handler', () => {
     );
   });
   it('calls handler', async () => {
-    const req = new FieldResolveRequest();
-    req.setInfo(new FieldResolveInfo());
-    const func = new Function();
+    const req = new messages.FieldResolveRequest();
+    req.setInfo(new messages.FieldResolveInfo());
+    const func = new messages.Function();
     func.setName('function');
     req.setFunction(func);
-    const expected = new FieldResolveResponse();
-    const nilObject = new Value();
+    const expected = new messages.FieldResolveResponse();
+    const nilObject = new messages.Value();
     nilObject.setNil(true);
     expected.setResponse(nilObject);
     const handler = jest.fn();

@@ -1,11 +1,4 @@
-import {
-  InterfaceResolveTypeResponse,
-  Error as ProtoError,
-  InterfaceResolveTypeRequest,
-  Function,
-  InterfaceResolveTypeInfo,
-  TypeRef,
-} from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { interfaceResolveTypeHandler } from '../../src/raw/interface_resolve_type';
 describe('raw interface resolve type handler', () => {
   beforeEach(() => {
@@ -35,8 +28,8 @@ describe('raw interface resolve type handler', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new InterfaceResolveTypeResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.InterfaceResolveTypeResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(
@@ -48,13 +41,13 @@ describe('raw interface resolve type handler', () => {
     );
   });
   it('calls handler', async () => {
-    const req = new InterfaceResolveTypeRequest();
-    req.setInfo(new InterfaceResolveTypeInfo());
-    const func = new Function();
+    const req = new messages.InterfaceResolveTypeRequest();
+    req.setInfo(new messages.InterfaceResolveTypeInfo());
+    const func = new messages.Function();
     func.setName('function');
     req.setFunction(func);
-    const expected = new InterfaceResolveTypeResponse();
-    const typeRef = new TypeRef();
+    const expected = new messages.InterfaceResolveTypeResponse();
+    const typeRef = new messages.TypeRef();
     typeRef.setName('SomeType');
     expected.setType(typeRef);
     const handler = jest.fn(() => 'SomeType');

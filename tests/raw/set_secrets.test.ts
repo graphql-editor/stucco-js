@@ -1,4 +1,4 @@
-import { SetSecretsResponse, Error as ProtoError, SetSecretsRequest, Secret } from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { setSecretsHandler } from '../../src/raw/set_secrets';
 describe('raw setSecrets resolve type handler', () => {
   it('checks content type', async () => {
@@ -24,8 +24,8 @@ describe('raw setSecrets resolve type handler', () => {
     ];
     await Promise.all(
       data.map(async (tc) => {
-        const expectedResponse = new SetSecretsResponse();
-        const responseError = new ProtoError();
+        const expectedResponse = new messages.SetSecretsResponse();
+        const responseError = new messages.Error();
         responseError.setMsg(tc.expectedErrorMessage);
         expectedResponse.setError(responseError);
         tc.assertion(expectedResponse.serializeBinary(), await setSecretsHandler(tc.contentType, new Uint8Array()));
@@ -40,12 +40,12 @@ describe('raw setSecrets resolve type handler', () => {
     }> = [
       {
         body: ((): Uint8Array => {
-          const req = new SetSecretsRequest();
+          const req = new messages.SetSecretsRequest();
           const secrets: Array<[string, string]> = [['SECRET', 'VALUE']];
           req.setSecretsList(
             secrets.map(
-              (secret): Secret => {
-                const protoSecret = new Secret();
+              (secret): messages.Secret => {
+                const protoSecret = new messages.Secret();
                 protoSecret.setKey(secret[0]);
                 protoSecret.setValue(secret[1]);
                 return protoSecret;
@@ -55,7 +55,7 @@ describe('raw setSecrets resolve type handler', () => {
           return req.serializeBinary();
         })(),
         expected: ((): Uint8Array => {
-          const response = new SetSecretsResponse();
+          const response = new messages.SetSecretsResponse();
           return response.serializeBinary();
         })(),
       },

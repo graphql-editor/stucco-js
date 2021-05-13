@@ -1,11 +1,14 @@
 import { Selections, Selection as APISelection } from '../../api';
 import { RecordOfValues, getRecordFromValueMap } from './value';
-import { Selection, FragmentDefinition } from '../driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { buildDirectives } from './directive';
 import { buildTypeRef } from './type_ref';
 import { notUndefined } from '../../util/util';
 
-function buildFragmentSelection(fragment?: FragmentDefinition, variables?: RecordOfValues): APISelection | undefined {
+function buildFragmentSelection(
+  fragment?: messages.FragmentDefinition,
+  variables?: RecordOfValues,
+): APISelection | undefined {
   if (!fragment) {
     return undefined;
   }
@@ -19,7 +22,7 @@ function buildFragmentSelection(fragment?: FragmentDefinition, variables?: Recor
   };
 }
 
-function buildFieldSelection(selection: Selection, variables?: RecordOfValues): APISelection | undefined {
+function buildFieldSelection(selection: messages.Selection, variables?: RecordOfValues): APISelection | undefined {
   const name = selection.getName();
   if (!name) {
     return;
@@ -35,11 +38,14 @@ function buildFieldSelection(selection: Selection, variables?: RecordOfValues): 
   };
 }
 
-function buildSelection(selection: Selection, variables?: RecordOfValues): APISelection | undefined {
+function buildSelection(selection: messages.Selection, variables?: RecordOfValues): APISelection | undefined {
   return buildFieldSelection(selection, variables) || buildFragmentSelection(selection.getDefinition(), variables);
 }
 
-export const buildSelections = (selectionSet?: Selection[], variables?: RecordOfValues): Selections | undefined =>
+export const buildSelections = (
+  selectionSet?: messages.Selection[],
+  variables?: RecordOfValues,
+): Selections | undefined =>
   Array.isArray(selectionSet) && selectionSet.length > 0
     ? selectionSet.map((sel) => buildSelection(sel, variables)).filter(notUndefined)
     : undefined;

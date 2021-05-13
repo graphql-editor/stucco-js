@@ -1,6 +1,6 @@
 import { HttpRequest } from 'src/api';
 import { RecordOfUnknown, getFromValue } from './value';
-import { Value } from '../driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 
 function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
   if (typeof protocol !== 'object' || protocol === null) {
@@ -27,7 +27,7 @@ function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
 
 interface WithProtocol {
   hasProtocol(): boolean;
-  getProtocol(): Value | undefined;
+  getProtocol(): messages.Value | undefined;
 }
 export function getProtocol(req: WithProtocol): HttpRequest | undefined {
   if (!req.hasProtocol()) {

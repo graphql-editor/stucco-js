@@ -3,14 +3,7 @@ const mockedReadFileSync = jest.fn();
 import { Writable } from 'stream';
 import { ServerUnaryCall } from 'grpc';
 import { Profiler } from '../../src/server/profiler';
-import {
-  FieldResolveRequest,
-  InterfaceResolveTypeRequest,
-  ScalarParseRequest,
-  ScalarSerializeRequest,
-  SetSecretsRequest,
-  UnionResolveTypeRequest,
-} from '../../src/proto/driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 
 function mockCall<T>(): T {
   return ({ request: null } as unknown) as T;
@@ -18,8 +11,8 @@ function mockCall<T>(): T {
 
 describe('grpc server', () => {
   let healthCheck: typeof import('grpc-ts-health-check');
-  let driverGrpcPb: typeof import('../../src/proto/driver_grpc_pb');
-  let driverPb: typeof import('../../src/proto/driver_pb');
+  let driverGrpcPb: typeof import('stucco-ts-proto-gen').driverService;
+  let driverPb: typeof import('stucco-ts-proto-gen').messages;
   let grpc: typeof import('grpc');
   let profiler: typeof import('../../src/server/profiler');
   let importer: typeof import('../../src/handler');
@@ -63,8 +56,8 @@ describe('grpc server', () => {
     profiler = await import('../../src/server/profiler');
     importer = await import('../../src/handler');
     driverHandlers = await import('../../src/proto/driver');
-    driverGrpcPb = await import('../../src/proto/driver_grpc_pb');
-    driverPb = await import('../../src/proto/driver_pb');
+    driverGrpcPb = await import('stucco-ts-proto-gen').then((m) => m.driverService);
+    driverPb = await import('stucco-ts-proto-gen').then((m) => m.messages);
     mockedGrpc = grpc as jest.Mocked<typeof grpc>;
     grpcServerMock = {
       addService: jest.fn(),
@@ -160,7 +153,7 @@ describe('grpc server', () => {
 
     const srv = new Server();
     const cb = jest.fn();
-    const call = { request } as ServerUnaryCall<FieldResolveRequest>;
+    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest>;
     await srv.fieldResolve(call, cb);
     expect(mockedDriverHandlers.fieldResolve).toHaveBeenCalledWith(request, handler);
     expect(cb).toBeCalledWith(null, expected);
@@ -176,7 +169,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<FieldResolveRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.FieldResolveRequest>>();
     await srv.fieldResolve(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -192,7 +185,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<FieldResolveRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.FieldResolveRequest>>();
     await srv.fieldResolve(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -206,7 +199,7 @@ describe('grpc server', () => {
 
     const srv = new Server();
     const cb = jest.fn();
-    const call = { request } as ServerUnaryCall<InterfaceResolveTypeRequest>;
+    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest>;
     await srv.interfaceResolveType(call, cb);
     expect(mockedDriverHandlers.interfaceResolveType).toHaveBeenCalledWith(request, handler);
     expect(cb).toBeCalledWith(null, expected);
@@ -222,7 +215,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<InterfaceResolveTypeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.InterfaceResolveTypeRequest>>();
     await srv.interfaceResolveType(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -238,7 +231,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<InterfaceResolveTypeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.InterfaceResolveTypeRequest>>();
     await srv.interfaceResolveType(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -258,7 +251,7 @@ describe('grpc server', () => {
     );
     const srv = new Server();
     const cb = jest.fn();
-    await srv.setSecrets({ request } as ServerUnaryCall<SetSecretsRequest>, cb);
+    await srv.setSecrets({ request } as ServerUnaryCall<messages.SetSecretsRequest>, cb);
     expect(cb).toHaveBeenCalledWith(null, response);
     expect(mockedDriverHandlers.setSecrets).toHaveBeenCalledWith(request, expect.anything());
   });
@@ -272,7 +265,7 @@ describe('grpc server', () => {
 
     const srv = new Server();
     const cb = jest.fn();
-    const call = { request } as ServerUnaryCall<ScalarParseRequest>;
+    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest>;
     await srv.scalarParse(call, cb);
     expect(mockedDriverHandlers.scalarParse).toHaveBeenCalledWith(request, handler);
     expect(cb).toBeCalledWith(null, expected);
@@ -288,7 +281,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<ScalarParseRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.ScalarParseRequest>>();
     await srv.scalarParse(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -304,7 +297,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<ScalarParseRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.ScalarParseRequest>>();
     await srv.scalarParse(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -318,7 +311,7 @@ describe('grpc server', () => {
 
     const srv = new Server();
     const cb = jest.fn();
-    const call = { request } as ServerUnaryCall<ScalarSerializeRequest>;
+    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest>;
     await srv.scalarSerialize(call, cb);
     expect(mockedDriverHandlers.scalarSerialize).toHaveBeenCalledWith(request, handler);
     expect(cb).toBeCalledWith(null, expected);
@@ -334,7 +327,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<ScalarSerializeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.ScalarSerializeRequest>>();
     await srv.scalarSerialize(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -350,7 +343,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<ScalarSerializeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.ScalarSerializeRequest>>();
     await srv.scalarSerialize(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -364,7 +357,7 @@ describe('grpc server', () => {
 
     const srv = new Server();
     const cb = jest.fn();
-    const call = { request } as ServerUnaryCall<UnionResolveTypeRequest>;
+    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest>;
     await srv.unionResolveType(call, cb);
     expect(mockedDriverHandlers.unionResolveType).toHaveBeenCalledWith(request, handler);
     expect(cb).toBeCalledWith(null, expected);
@@ -380,7 +373,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<UnionResolveTypeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.UnionResolveTypeRequest>>();
     await srv.unionResolveType(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -396,7 +389,7 @@ describe('grpc server', () => {
     expected.setError(expectedDriverError);
     const srv = new Server();
     const cb = jest.fn();
-    const call = mockCall<ServerUnaryCall<UnionResolveTypeRequest>>();
+    const call = mockCall<ServerUnaryCall<messages.UnionResolveTypeRequest>>();
     await srv.unionResolveType(call, cb);
     expect(cb).toBeCalledWith(null, expected);
   });
@@ -604,7 +597,7 @@ describe('grpc server', () => {
     mockedProfiler.Profiler.mockImplementation(() => (profilerMock as unknown) as Profiler);
     profilerMock.report.mockReturnValue('mocked report');
     new Server({ enableProfiling: true });
-    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<FieldResolveRequest>;
+    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<messages.FieldResolveRequest>;
     const errorSpy = jest.spyOn(global.console, 'error');
     await new Promise<void>((resolved) => {
       const cb = jest.fn();
@@ -636,7 +629,7 @@ describe('grpc server', () => {
     mockedProfiler.Profiler.mockImplementation(() => (profilerMock as unknown) as Profiler);
     profilerMock.report.mockReturnValue('');
     new Server();
-    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<FieldResolveRequest>;
+    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<messages.FieldResolveRequest>;
     const errorSpy = jest.spyOn(global.console, 'error');
     await new Promise<void>((resolved) => {
       const cb = jest.fn();

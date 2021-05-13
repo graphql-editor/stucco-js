@@ -1,11 +1,11 @@
 import * as jspb from 'google-protobuf';
-import { Value, ArrayValue, ObjectValue } from '../driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 
-export type RecordOfValues = Record<string, Value>;
+export type RecordOfValues = Record<string, messages.Value>;
 export type RecordOfUnknown = Record<string, unknown>;
 
-export function valueFromAny(data: unknown): Value {
-  const val = new Value();
+export function valueFromAny(data: unknown): messages.Value {
+  const val = new messages.Value();
   if (data === null || typeof data === 'undefined') {
     val.setNil(true);
   } else if (Buffer.isBuffer(data)) {
@@ -13,7 +13,7 @@ export function valueFromAny(data: unknown): Value {
   } else if (ArrayBuffer.isView(data)) {
     val.setAny(new Uint8Array(data.buffer));
   } else if (Array.isArray(data)) {
-    val.setA(data.reduce((pv, cv) => pv.addItems(valueFromAny(cv)) && pv, new ArrayValue()));
+    val.setA(data.reduce((pv, cv) => pv.addItems(valueFromAny(cv)) && pv, new messages.ArrayValue()));
   } else {
     switch (typeof data) {
       case 'number':
@@ -33,7 +33,7 @@ export function valueFromAny(data: unknown): Value {
         val.setO(
           Object.keys(data as RecordOfUnknown).reduce(
             (pv, cv) => pv.getPropsMap().set(cv, valueFromAny((data as RecordOfUnknown)[cv])) && pv,
-            new ObjectValue(),
+            new messages.ObjectValue(),
           ),
         );
         break;
@@ -42,7 +42,7 @@ export function valueFromAny(data: unknown): Value {
   return val;
 }
 
-export function getFromValue(value?: Value, variables?: RecordOfValues): unknown | undefined {
+export function getFromValue(value?: messages.Value, variables?: RecordOfValues): unknown | undefined {
   if (typeof value === 'undefined') {
     return;
   }
@@ -90,12 +90,14 @@ export function getFromValue(value?: Value, variables?: RecordOfValues): unknown
 }
 
 const jspbMapReducer = (variables?: RecordOfValues) => (
-  m: jspb.Map<string, Value>,
+  m: jspb.Map<string, messages.Value>,
   out: RecordOfUnknown,
 ): RecordOfUnknown => {
   m.forEach((v, k) => (out[k] = getFromValue(v, variables)));
   return out;
 };
 
-export const getRecordFromValueMap = (m: jspb.Map<string, Value>, variables?: RecordOfValues): RecordOfUnknown =>
-  jspbMapReducer(variables)(m, {});
+export const getRecordFromValueMap = (
+  m: jspb.Map<string, messages.Value>,
+  variables?: RecordOfValues,
+): RecordOfUnknown => jspbMapReducer(variables)(m, {});

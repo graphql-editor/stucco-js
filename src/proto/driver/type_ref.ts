@@ -1,7 +1,7 @@
 import { TypeRef as APITypeRef } from '../../api';
-import { TypeRef } from '../driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 
-export function buildTypeRef(tr: TypeRef | undefined): APITypeRef | undefined {
+export function buildTypeRef(tr: messages.TypeRef | undefined): APITypeRef | undefined {
   if (!tr) {
     return;
   }

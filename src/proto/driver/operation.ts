@@ -1,12 +1,12 @@
 import { OperationDefinition as APIOperationDefinition } from '../../api';
-import { OperationDefinition } from '../driver_pb';
+import { messages } from 'stucco-ts-proto-gen';
 import { RecordOfValues } from './value';
 import { buildDirectives } from './directive';
 import { buildSelections } from './selection';
 import { buildVariableDefinitions } from './variable_definition';
 
 export function buildOperationDefinition(
-  od: OperationDefinition | undefined,
+  od: messages.OperationDefinition | undefined,
   variables: RecordOfValues,
 ): APIOperationDefinition | undefined {
   if (od) {

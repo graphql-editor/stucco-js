@@ -12,7 +12,6 @@
     "test": "jest",
     "test:e2e": "jest -c jest.e2e.config.js",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"e2e/**/*.js\" \"*.js\"",
-    "generate-proto": "protoc --js_out=import_style=commonjs,binary:./src --grpc_out=./src --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin ./proto/driver.proto && protoc --plugin=\"protoc-gen-ts=./node_modules/.bin/protoc-gen-ts\" --ts_out=\"./src\" ./proto/driver.proto",
     "bump-stucco": "node scripts/bump_stucco.js",
     "build": "gulp"
   },
@@ -24,6 +23,7 @@
     "grpc-ts-health-check": "^2.0.6",
     "lru-cache": "^6.0.0",
     "node-forge": "^0.10.0",
+    "stucco-ts-proto-gen": "^0.7.7",
     "uuid": "^8.3.2",
     "yargs": "^16.2.0"
   },
@@ -46,7 +46,7 @@
     "eslint-plugin-prefer-arrow": "^1.2.2",
     "eslint-plugin-prettier": "^3.3.0",
     "grpc-tools": "^1.10.0",
-    "grpc_tools_node_protoc_ts": "^5.0.1",
+    "grpc_tools_node_protoc_ts": "^5.2.2",
     "gulp": "^4.0.2",
     "gulp-typescript": "^6.0.0-alpha.1",
     "jest": "^26.6.3",
