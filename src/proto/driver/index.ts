@@ -136,7 +136,7 @@ function mustGetInfo(req: { getInfo: () => ProtoInfoLike | undefined }): ProtoIn
 
 function protoInfoLikeToInfoLike(info: ProtoInfoLike, variables: RecordOfValues): InfoLike {
   const operation = info.hasOperation() && buildOperationDefinition(info.getOperation(), variables);
-  const parentType = info.hasParenttype && buildTypeRef(info.getParenttype());
+  const parentType = info.hasParenttype() && buildTypeRef(info.getParenttype());
   const path = info.hasPath() && buildResponsePath(info.getPath());
   const variableValues = getRecordFromValueMap(info.getVariablevaluesMap());
   return {

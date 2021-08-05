@@ -1,7 +1,7 @@
 import LRU from 'lru-cache';
 import { pki } from 'node-forge';
 import { IncomingMessage } from 'http';
-import { Socket } from 'net';
+import { TLSSocket } from 'tls';
 import { v4 } from 'uuid';
 
 const maxAge = 1000 * 60 * 5;
@@ -10,28 +10,13 @@ const cache = new LRU<string, boolean>({
   maxAge: 1000 * 60 * 5,
 });
 
-interface RawCert {
-  raw: Buffer | string;
-}
-
-function isRawCert(v: unknown): v is RawCert {
-  if (typeof v !== 'object' || v === null) {
-    return false;
-  }
-  const rv = v as Record<string | number | symbol, unknown>;
-  return Buffer.isBuffer(rv['raw']) || typeof rv['raw'] === 'string';
-}
-
-interface WithPeerCert extends Socket {
-  getPeerCertificate: (detailed?: boolean) => RawCert;
-}
-
 interface WithTLSSocket extends IncomingMessage {
-  socket: WithPeerCert;
+  socket: TLSSocket;
 }
 
 function isWithTLSSocket(r: IncomingMessage): r is WithTLSSocket {
-  return 'getPeerCertificate' in r.socket && typeof r.socket['getPeerCertificate'] === 'function';
+  const s = r.socket as TLSSocket;
+  return typeof s.getPeerCertificate === 'function';
 }
 
 function chunkPEM(pem: string): string {
@@ -53,12 +38,7 @@ export function createPEM(data: string): string {
 export class HttpCertReader {
   async ReadCert(req: IncomingMessage): Promise<string> {
     if (isWithTLSSocket(req)) {
-      const peerCert = req.socket.getPeerCertificate(false);
-      if (isRawCert(peerCert)) {
-        let cert = peerCert.raw;
-        if (Buffer.isBuffer(cert)) cert = cert.toString('base64');
-        return createPEM(cert);
-      }
+      return createPEM(req.socket.getPeerCertificate(false).raw.toString('base64'));
     }
     throw new Error('request missing cert data');
   }
