@@ -78,6 +78,7 @@ describe('grpc server', () => {
     profiler = await import('../../src/server/profiler');
     importer = await import('../../src/handler');
     driverHandlers = await import('../../src/proto/driver');
+    console.log(driverHandlers)
     driverGrpcPb = await import('stucco-ts-proto-gen').then((m) => m.driverService);
     driverPb = await import('stucco-ts-proto-gen').then((m) => m.messages);
     mockedGrpc = grpc as jest.Mocked<typeof grpc>;
