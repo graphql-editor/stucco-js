@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import {
   FieldResolveInput,
   FieldResolveOutput,
@@ -457,7 +457,9 @@ export const subscriptionConnection = (
 
 class Emitter {
   private eventEmitter: EventEmitter;
-  constructor(private srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest>) {
+  constructor(
+    private srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest, messages.SubscriptionListenMessage>,
+  ) {
     this.eventEmitter = new EventEmitter();
     srv.on('close', () => {
       this.eventEmitter.emit('close');
@@ -473,7 +475,7 @@ class Emitter {
       msg.setPayload(valueFromAny(v));
     }
     await new Promise<void>((resolve, reject) =>
-      this.srv.write(msg, (e) => {
+      this.srv.write(msg, (e: unknown) => {
         if (e) {
           reject(e);
         }
@@ -491,7 +493,7 @@ class Emitter {
 }
 
 export const subscritpionListen = (
-  srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest>,
+  srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest, messages.SubscriptionListenMessage>,
   handler: (x: SubscriptionListenInput, emit: SubscriptionListenEmitter) => Promise<void>,
 ): Promise<void> =>
   handler(
