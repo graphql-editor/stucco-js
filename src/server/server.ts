@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import * as grpc from 'grpc';
-import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-ts-health-check';
+import * as grpc from '@grpc/grpc-js';
+import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-health-check-ts';
 import { SubscriptionListenInput, SubscriptionListenEmitter } from '../api';
 import { getHandler } from '../handler';
 import { driverService, messages } from 'stucco-ts-proto-gen';
@@ -19,6 +19,9 @@ import { Writable } from 'stream';
 import { Profiler } from './profiler';
 import { setSecretsEnvironment } from '../raw/set_secrets';
 
+type ServerStatusResponse = Partial<grpc.StatusObject>;
+type ServerErrorResponse = ServerStatusResponse & Error;
+
 function toBuffer(v: unknown): Buffer {
   if (Buffer.isBuffer(v)) {
     return v;
@@ -34,18 +37,12 @@ export interface WithFunction {
   getFunction(): { getName: () => string } | undefined;
 }
 
-function isCallRequestWithFunction(
-  v: unknown,
-): v is {
-  request: WithFunction;
-} {
-  let request: WithFunction | unknown;
-  if (typeof v === 'object' && v !== null && 'request' in v) {
-    request = (v as {
-      request: unknown;
-    }).request;
-  }
-  return typeof request === 'object' && request !== null && 'hasFunction' in request && 'getFunction' in request;
+function isCallRequestWithFunction<T, U>(
+  v: grpc.ServerUnaryCall<T, U>,
+): v is grpc.ServerUnaryCall<T & WithFunction, U> {
+  return (
+    typeof v.request === 'object' && v.request !== null && 'hasFunction' in v.request && 'getFunction' in v.request
+  );
 }
 
 interface ServerOptions {
@@ -68,6 +65,7 @@ interface GRPCServer {
   addService: typeof grpc.Server.prototype.addService;
   tryShutdown: typeof grpc.Server.prototype.tryShutdown;
   bind: typeof grpc.Server.prototype.bind;
+  bindAsync: typeof grpc.Server.prototype.bindAsync;
 }
 
 interface WithError {
@@ -104,20 +102,30 @@ export class Server {
     };
     this.server = serverOpts.server || new grpc.Server(this.serverOpts.grpcServerOpts);
     const grpcHealthCheck = new GrpcHealthCheck(healthCheckStatusMap);
-    this.server.addService(HealthService, grpcHealthCheck);
+    this.server.addService(HealthService, grpcHealthCheck.server);
     this.server.addService(driverService.DriverService, {
-      fieldResolve: this.wrap(this, this.fieldResolve),
-      interfaceResolveType: this.wrap(this, this.interfaceResolveType),
-      scalarParse: this.wrap(this, this.scalarParse),
-      scalarSerialize: this.wrap(this, this.scalarSerialize),
-      setSecrets: this.wrap(this, this.setSecrets),
-      stderr: this.wrap(this, this.stderr),
-      stdout: this.wrap(this, this.stdout),
-      stream: (srv: grpc.ServerWritableStream<messages.StreamRequest>) => this.stream(srv),
-      unionResolveType: this.wrap(this, this.unionResolveType),
-      subscriptionConnection: this.wrap(this, this.subscriptionConnection),
-      subscriptionListen: (srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest>) =>
-        this.subscriptionListen(srv),
+      fieldResolve: this.wrapUnaryCall(this, this.unaryCallHandler(messages.FieldResolveResponse, fieldResolve)),
+      interfaceResolveType: this.wrapUnaryCall(
+        this,
+        this.unaryCallHandler(messages.InterfaceResolveTypeResponse, interfaceResolveType),
+      ),
+      scalarParse: this.wrapUnaryCall(this, this.unaryCallHandler(messages.ScalarParseResponse, scalarParse)),
+      scalarSerialize: this.wrapUnaryCall(
+        this,
+        this.unaryCallHandler(messages.ScalarSerializeResponse, scalarSerialize),
+      ),
+      setSecrets: this.wrapUnaryCall(this, this.setSecrets),
+      stderr: this.wrapServerStreamingCall(this, this.stderr),
+      stdout: this.wrapServerStreamingCall(this, this.stdout),
+      stream: (srv: grpc.ServerWritableStream<messages.StreamRequest, messages.StreamMessage>) => this.stream(srv),
+      unionResolveType: this.wrapUnaryCall(
+        this,
+        this.unaryCallHandler(messages.UnionResolveTypeResponse, unionResolveType),
+      ),
+      subscriptionConnection: this.wrapUnaryCall(this, this.subscriptionConnection),
+      subscriptionListen: (
+        srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest, messages.SubscriptionListenMessage>,
+      ) => this.subscriptionListen(srv),
     });
     this.stdoutStreams = [];
     this.stderrStreams = [];
@@ -188,86 +196,71 @@ export class Server {
     }
   }
 
-  private async executeUserHandler<T extends WithFunction, U extends WithError, V, W>(
-    call: grpc.ServerUnaryCall<T>,
+  private executeUserHandler<T extends WithFunction, U extends WithError, V, W>(
+    call: grpc.ServerUnaryCall<T, U>,
     callback: grpc.sendUnaryData<U>,
     responseCtor: {
       new (): U;
     },
     fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
-  ): Promise<void> {
-    try {
-      const handler = await getHandler<V, W>(call.request);
-      const response = await fn(call.request, handler);
-      callback(null, response);
-    } catch (e) {
-      const response = new responseCtor();
-      doError(e, response);
-      callback(null, response);
-    }
+  ): void {
+    const f = async () => {
+      try {
+        const handler = await getHandler<V, W>(call.request);
+        const response = await fn(call.request, handler);
+        callback(null, response);
+      } catch (e) {
+        const response = new responseCtor();
+        doError(e, response);
+        callback(null, response);
+      }
+    };
+    f().catch((e) => console.error(e));
   }
 
-  public async fieldResolve(
-    call: grpc.ServerUnaryCall<messages.FieldResolveRequest>,
-    callback: grpc.sendUnaryData<messages.FieldResolveResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.FieldResolveResponse, fieldResolve);
+  private unaryCallHandler<T extends WithFunction, U extends WithError, V, W>(
+    responseCtor: {
+      new (): U;
+    },
+    fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
+  ): grpc.handleUnaryCall<T, U> {
+    return (call: grpc.ServerUnaryCall<T, U>, callback: grpc.sendUnaryData<U>): void =>
+      this.executeUserHandler(call, callback, responseCtor, fn);
   }
 
-  public async interfaceResolveType(
-    call: grpc.ServerUnaryCall<messages.InterfaceResolveTypeRequest>,
-    callback: grpc.sendUnaryData<messages.InterfaceResolveTypeResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.InterfaceResolveTypeResponse, interfaceResolveType);
-  }
-
-  public async setSecrets(
-    call: grpc.ServerUnaryCall<messages.SetSecretsRequest>,
+  private setSecrets(
+    call: grpc.ServerUnaryCall<messages.SetSecretsRequest, messages.SetSecretsResponse>,
     callback: grpc.sendUnaryData<messages.SetSecretsResponse>,
-  ): Promise<void> {
-    callback(null, await setSecrets(call.request, setSecretsEnvironment));
+  ): void {
+    setSecrets(call.request, setSecretsEnvironment)
+      .then((v) => callback(null, v))
+      .catch((e) => console.error(e));
   }
 
-  public async scalarParse(
-    call: grpc.ServerUnaryCall<messages.ScalarParseRequest>,
-    callback: grpc.sendUnaryData<messages.ScalarParseResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.ScalarParseResponse, scalarParse);
-  }
-
-  public async scalarSerialize(
-    call: grpc.ServerUnaryCall<messages.ScalarSerializeRequest>,
-    callback: grpc.sendUnaryData<messages.ScalarSerializeResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.ScalarSerializeResponse, scalarSerialize);
-  }
-
-  public async unionResolveType(
-    call: grpc.ServerUnaryCall<messages.UnionResolveTypeRequest>,
-    callback: grpc.sendUnaryData<messages.UnionResolveTypeResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.UnionResolveTypeResponse, unionResolveType);
-  }
-
-  public async stream(srv: grpc.ServerWritableStream<messages.StreamRequest>): Promise<void> {
+  private stream(srv: grpc.ServerWritableStream<messages.StreamRequest, messages.StreamMessage>): void {
     console.error(`Requested stream with function ${srv.request.getFunction()?.getName()}`);
     throw new Error('Data streaming is not yet implemented');
   }
 
-  public async subscriptionConnection(
-    call: grpc.ServerUnaryCall<messages.SubscriptionConnectionRequest>,
+  private subscriptionConnection(
+    call: grpc.ServerUnaryCall<messages.SubscriptionConnectionRequest, messages.SubscriptionConnectionResponse>,
     callback: grpc.sendUnaryData<messages.SubscriptionConnectionResponse>,
-  ): Promise<void> {
-    return this.executeUserHandler(call, callback, messages.SubscriptionConnectionResponse, subscriptionConnection);
+  ): void {
+    this.executeUserHandler(call, callback, messages.SubscriptionConnectionResponse, subscriptionConnection);
   }
 
-  public async subscriptionListen(srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest>): Promise<void> {
-    try {
-      const handler = await getHandler<SubscriptionListenInput, void, SubscriptionListenEmitter>(srv.request);
-      await subscritpionListen(srv, handler);
-    } catch (e) {
-      console.error(e);
-    }
+  private subscriptionListen(
+    srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest, messages.SubscriptionListenMessage>,
+  ): void {
+    const f = async () => {
+      try {
+        const handler = await getHandler<SubscriptionListenInput, void, SubscriptionListenEmitter>(srv.request);
+        await subscritpionListen(srv, handler);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    f();
   }
   public start(): void {
     try {
@@ -295,63 +288,68 @@ export class Server {
     return grpc.ServerCredentials.createSsl(rootCert, [certs], checkClientCertificate);
   }
 
-  public serve(): void {
+  public serve(): Promise<void> {
     const { bindAddress = '0.0.0.0:1234', pluginMode = true } = this.serverOpts;
     const creds: grpc.ServerCredentials = this.credentials(pluginMode);
-    this.server.bind(bindAddress, creds);
-    if (pluginMode) {
-      console.log('1|1|tcp|127.0.0.1:1234|grpc');
-    }
-    this.start();
+    return new Promise((resolve, reject) => {
+      this.server.bindAsync(bindAddress, creds, (err, port) => {
+        if (err) {
+          console.error(err);
+          reject(err);
+          return;
+        }
+        if (pluginMode) {
+          console.log(`1|1|tcp|127.0.0.1:${port}|grpc`);
+        }
+        this.start();
+        resolve();
+      });
+    });
   }
 
   public stop(): Promise<void> {
     this.unhookIO();
-    return new Promise((resolve) =>
-      this.server.tryShutdown(() => {
-        resolve();
-      }),
-    );
+    return new Promise((resolve, reject) => this.server.tryShutdown((err) => (err ? reject(err) : resolve())));
   }
-  private profileFunction<
-    T extends {
-      request: WithFunction;
-    },
-    U extends Array<unknown>,
-    V
-  >(call: T, callback: (...args: U) => V, boundFn: (call: T, callback: (...args: U) => V) => void): void {
+  private profileFunction<T extends WithFunction, U>(
+    call: grpc.ServerUnaryCall<T, U>,
+    callback: grpc.sendUnaryData<U>,
+    boundFn: grpc.handleUnaryCall<T, U>,
+  ): void {
     const profiler = new Profiler({ enabled: !!this.serverOpts.enableProfiling });
     profiler.start();
     boundFn(
       call,
-      (...args: U): V => {
-        const r = callback(...args);
-        const report = profiler.report(call && (call as { request?: WithFunction }).request);
+      (
+        error: ServerErrorResponse | ServerStatusResponse | null,
+        value?: U | null,
+        trailer?: grpc.Metadata,
+        flags?: number,
+      ): void => {
+        callback(error, value, trailer, flags);
+        const report = profiler.report(call && call.request);
         if (report) {
           console.error(report);
         }
-        return r;
       },
     );
   }
-  private wrap<
-    T extends
-      | {
-          request: WithFunction;
-        }
-      | Writable
-      | grpc.ServerUnaryCall<messages.SetSecretsRequest>,
-    U extends Array<unknown>,
-    V
-  >(srv: Server, fn: (call: T, callback: (...args: U) => V) => void): (call: T, callback: (...args: U) => V) => void {
+  private wrapUnaryCall<T, U>(srv: Server, fn: grpc.handleUnaryCall<T, U>): grpc.handleUnaryCall<T, U> {
     const boundFn = fn.bind(srv);
-    return (call: T, callback: (...args: U) => V): void => {
+    return (call: grpc.ServerUnaryCall<T, U>, callback: grpc.sendUnaryData<U>): void => {
       if (isCallRequestWithFunction(call)) {
-        return this.profileFunction(call, callback, boundFn);
+        this.profileFunction(call, callback, boundFn);
       } else {
         boundFn(call, callback);
       }
     };
+  }
+  private wrapServerStreamingCall<T extends Writable, U>(
+    srv: Server,
+    fn: grpc.handleServerStreamingCall<T, U>,
+  ): grpc.handleServerStreamingCall<T, U> {
+    const boundFn = fn.bind(srv);
+    return (call: grpc.ServerWritableStream<T, U>) => boundFn(call);
   }
 
   private stdout(call: Writable): void {

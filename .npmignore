@@ -9,3 +9,11 @@ build
 /coverage
 jest.config.js
 tslint.json
+/e2e
+.eslint*
+.prettier*
+.gitattributes
+/scripts
+stucco.jpg
+jest*
+.vscode

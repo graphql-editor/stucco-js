@@ -35,5 +35,8 @@ export const builder = (yargs: Argv): Argv =>
 export function handler(args: Arguments): void {
   const maxMessageSize = toBytesSize(args.maxMessageSize);
   const enableProfiling = args.enableProfiling === true;
-  run({ maxMessageSize, enableProfiling });
+  run({ maxMessageSize, enableProfiling }).catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
 }

@@ -10,7 +10,7 @@ const consoleHook = new ConsoleHook(console);
 import { Server } from './server';
 
 interface StoppableServer {
-  serve(): void;
+  serve(): Promise<void>;
   stop(): Promise<unknown>;
 }
 
@@ -21,7 +21,7 @@ interface RunOptions {
 }
 
 export const runPluginWith = (server: StoppableServer) => {
-  return (opts: RunOptions = {}): void => {
+  return async (opts: RunOptions = {}): Promise<void> => {
     const { version = process.version } = opts;
     if (process.argv.length > 2 && process.argv[2] === 'config') {
       process.stdout.write(
@@ -44,12 +44,12 @@ export const runPluginWith = (server: StoppableServer) => {
       };
       process.on('SIGINT', stopServer);
       process.on('SIGTERM', stopServer);
-      server.serve();
+      await server.serve();
     }
   };
 };
 
-export const run = (opts: RunOptions = {}): void => {
+export const run = async (opts: RunOptions = {}): Promise<void> => {
   try {
     const grpcServerOpts = {
       ...(opts.maxMessageSize && {
@@ -64,10 +64,11 @@ export const run = (opts: RunOptions = {}): void => {
       consoleHook: consoleHook,
       grpcServerOpts,
     };
-    return runPluginWith(new Server(serverOptions))(opts);
+    await runPluginWith(new Server(serverOptions))(opts);
   } catch (e) {
     stderr.unhook();
     consoleHook.unhook();
     console.error(e);
+    throw e;
   }
 };
