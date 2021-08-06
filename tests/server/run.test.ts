@@ -27,7 +27,7 @@ describe('local plugin server', () => {
   });
   it('starts and stops with process signals', () => {
     const serverMock = {
-      serve: jest.fn(() => {
+      serve: jest.fn(async () => {
         return;
       }),
       stop: jest.fn(() => {
