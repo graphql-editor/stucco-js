@@ -57,16 +57,10 @@ function customHandler(sec: Auth): HandlerFn {
         })
         .end(Buffer.from(body));
     } catch (e) {
-      const errResp =
-        e instanceof UserError
-          ? {
-              status: 400,
-              body: Buffer.from(e.message),
-            }
-          : {
-              status: 500,
-              body: Buffer.from(e.message || ''),
-            };
+      const errResp = {
+        status: e instanceof UserError ? 400 : 500,
+        body: Buffer.from(e instanceof Error ? e.message : ''),
+      };
       res
         .writeHead(errResp.status, {
           'Content-Length': errResp.body.length,
