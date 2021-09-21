@@ -19,13 +19,13 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@grpc/grpc-js": "^1.3.6",
+    "@grpc/grpc-js": "^1.3.7",
     "bin-wrapper": "^4.1.0",
     "google-protobuf": "^3.14.0",
     "grpc-health-check-ts": "^1.0.2",
     "lru-cache": "^6.0.0",
     "node-forge": "^0.10.0",
-    "stucco-ts-proto-gen": "^0.7.7",
+    "stucco-ts-proto-gen": "^0.7.10",
     "uuid": "^8.3.2",
     "yargs": "^16.2.0"
   },
@@ -55,6 +55,6 @@
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.4.4",
-    "typescript": "^4.3.5"
+    "typescript": "^4.4.3"
   }
 }
