@@ -99,7 +99,7 @@ const isResponse = (
       }
     | unknown,
 ): v is Response =>
-  typeof v === 'object' && !!v && 'response' in v && typeof (v as { response?: unknown }).response !== 'undefined';
+  typeof v === 'object' && !!v && 'response' in v && (v as { response?: unknown }).response !== undefined;
 
 function mapVariables(infoLike: ProtoInfoLike): RecordOfValues {
   if (!infoLike.hasOperation()) {
@@ -128,7 +128,7 @@ function mapVariables(infoLike: ProtoInfoLike): RecordOfValues {
 
 function mustGetInfo(req: { getInfo: () => ProtoInfoLike | undefined }): ProtoInfoLike {
   const info = req.getInfo();
-  if (typeof info === 'undefined') {
+  if (info === undefined) {
     throw new Error('info is required');
   }
   return info;
@@ -191,7 +191,7 @@ async function callHandler<
   RequestType,
   DriverInput,
   DriverOutput,
-  ResponseType extends HandlerResponse<RequestType, DriverInput, DriverOutput>
+  ResponseType extends HandlerResponse<RequestType, DriverInput, DriverOutput>,
 >(resp: ResponseType, handler: (x: DriverInput) => Promise<DriverOutput>, request: RequestType): Promise<ResponseType> {
   try {
     const out = await handler(resp.input(request));
@@ -216,16 +216,18 @@ class SettableFieldResolveResponse extends messages.FieldResolveResponse {
     const info = mustGetInfo(req);
     const variables = mapVariables(info);
     const protocol = getProtocol(req);
+    const subscriptionPayload = getFromValue(req.getSubscriptionpayload());
     const source = getSource(req);
     const args = getRecordFromValueMap(req.getArgumentsMap(), variables);
     const rootValue = getFromValue(req.getInfo()?.getRootvalue());
     return {
       ...(Object.keys(args).length > 0 && { arguments: args }),
       ...(protocol && { protocol }),
-      ...(typeof source !== 'undefined' && { source }),
+      ...(subscriptionPayload !== undefined && { subscriptionPayload }),
+      ...(source !== undefined && { source }),
       info: {
         ...protoInfoLikeToInfoLike(info, variables),
-        ...(typeof rootValue !== 'undefined' && { rootValue }),
+        ...(rootValue !== undefined && { rootValue }),
       },
     };
   }
@@ -252,7 +254,7 @@ class SettableResolveTypeResponse<
   T extends {
     getInfo: () => ProtoInfoLike | undefined;
     getValue: () => messages.Value | undefined;
-  }
+  },
 > {
   constructor(private typeResponse: SettableResolveTypeResponseType<T>) {}
   set(out?: SettableResolveTypeResponseSetOutArg): void {
@@ -353,7 +355,7 @@ interface SettableScalarResponseValue<T> {
 class SettableScalarResponse<
   T extends {
     getValue: () => messages.Value | undefined;
-  }
+  },
 > {
   constructor(private typeResponse: SettableScalarResponseValue<T>) {}
   set(out?: SettableScalarResponseSetOutArg): void {
@@ -471,7 +473,7 @@ class Emitter {
   async emit(v?: unknown): Promise<void> {
     const msg = new messages.SubscriptionListenMessage();
     msg.setNext(true);
-    if (typeof v !== 'undefined') {
+    if (v !== undefined) {
       msg.setPayload(valueFromAny(v));
     }
     await new Promise<void>((resolve, reject) =>

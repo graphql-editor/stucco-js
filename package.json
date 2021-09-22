@@ -26,7 +26,7 @@
     "lru-cache": "^6.0.0",
     "node-forge": "^0.10.0",
     "retry": "^0.13.1",
-    "stucco-ts-proto-gen": "^0.7.10",
+    "stucco-ts-proto-gen": "^0.7.12",
     "uuid": "^8.3.2",
     "yargs": "^16.2.0"
   },

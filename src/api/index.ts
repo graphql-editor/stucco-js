@@ -93,6 +93,7 @@ export interface FieldResolveInput<Arguments = Record<string, unknown> | undefin
   info: FieldResolveInfo;
   protocol?: Protocol;
   environment?: unknown;
+  subscriptionPayload?: unknown;
 }
 
 export type FieldResolveOutput<T = unknown | (() => unknown)> =
