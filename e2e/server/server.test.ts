@@ -28,7 +28,11 @@ describe('test plugin integration', () => {
     const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
     const env = { ...process.env };
     env.PATH = `${cwd}:${env.PATH || ''}`.replace(/:$/, '');
-    stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js')], { cwd, env, stdio: 'inherit' });
+    stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js'), 'local', 'start', '-v', '5'], {
+      cwd,
+      env,
+      stdio: 'inherit',
+    });
     await retry(
       async () =>
         fetch('http://localhost:8080/graphql', {
