@@ -68,7 +68,7 @@ export const run = async (opts: RunOptions = {}): Promise<void> => {
   } catch (e) {
     stderr.unhook();
     consoleHook.unhook();
-    console.error(e);
+    console.trace(e);
     throw e;
   }
 };

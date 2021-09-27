@@ -1,8 +1,9 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import fetch from 'node-fetch';
 import { join } from 'path';
+import { SIGINT } from 'constants';
 
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const node = process.platform === 'win32' ? 'node.exe' : 'node';
 
 const retry = <T>(fn: () => Promise<T>, retries: number, timeout: number): Promise<T> =>
   retries > 1
@@ -25,7 +26,9 @@ describe('test plugin integration', () => {
   beforeAll(async () => {
     // Use run.js directly to make sure process is terminated on windows
     const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
-    stuccoProccess = spawn(npm, ['run', 'start'], { cwd, env: process.env, stdio: 'inherit' });
+    const env = { ...process.env };
+    env.PATH = `${cwd}:${env.PATH || ''}`.replace(/:$/, '');
+    stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js')], { cwd, env, stdio: 'inherit' });
     await retry(
       async () =>
         fetch('http://localhost:8080/graphql', {
@@ -36,13 +39,14 @@ describe('test plugin integration', () => {
       2000,
     );
   }, 30000);
-  afterAll(() => {
-    if (stuccoProccess) {
-      if (process.platform === 'win32') {
-        execSync('taskkill /pid ' + stuccoProccess.pid + ' /T /F');
-      } else {
-        stuccoProccess.kill();
-      }
+  afterAll(async () => {
+    if (!stuccoProccess) {
+      return;
+    }
+    if (process.platform === 'win32') {
+      execSync('taskkill /pid ' + stuccoProccess.pid + ' /T /F');
+    } else {
+      stuccoProccess.kill(SIGINT);
     }
   });
   it('returns hero', async () => {

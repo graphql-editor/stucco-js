@@ -1,3 +1,4 @@
+import { FieldResolveInput, FieldResolveOutput } from '../../../lib/api';
 const battles = [
   {
     when: new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString(),
@@ -28,9 +29,9 @@ const battles = [
   },
 ];
 
-module.exports = (input) => {
+export default (input: FieldResolveInput): FieldResolveOutput => {
   const when = input.arguments && input.arguments.when;
-  if (when) {
+  if (typeof when === 'string') {
     return battles.filter((battle) => battle.when === when.substr('parsed date: '.length));
   }
   return battles;

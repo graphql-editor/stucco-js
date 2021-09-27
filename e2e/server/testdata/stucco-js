@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+const { spawn } = require('child_process');
+const { join } = require('path');
+const { SIGINT } = require('constants');
+const stuccoProccess = spawn('node', [join('..', '..', '..', 'lib', 'cli', 'cli.js'), ...process.argv.slice(2)], {
+  cwd: process.cwd(),
+  env: process.env,
+  stdio: 'inherit',
+});
+process.on('SIGTERM', () => {
+  stuccoProccess.kill(SIGINT);
+});
+process.on('SIGINT', () => {
+  stuccoProccess.kill(SIGINT);
+});

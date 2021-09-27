@@ -4,3 +4,6 @@ lib
 vendor
 coverage
 .vscode
+/e2e/server/testdata/*.js
+/e2e/server/testdata/*.js.map
+/e2e/server/testdata/*.d.ts

@@ -9,6 +9,7 @@ import { retry } from '../util/util';
 import { rmdir } from 'fs';
 import { promisify } from 'util';
 import { join } from 'path';
+import { SIGINT } from 'constants';
 const rmdirP = promisify(rmdir);
 
 const base = 'https://stucco-release.fra1.cdn.digitaloceanspaces.com';
@@ -48,10 +49,10 @@ if (require.main === module) {
     const args = process.argv.length > 2 ? process.argv.slice(2) : ['local', 'start'];
     const child = spawn(bin.path(), args, { stdio: [process.stdin, process.stdout, process.stderr] });
     process.on('SIGTERM', () => {
-      child.kill();
+      child.kill(SIGINT);
     });
     process.on('SIGINT', () => {
-      child.kill();
+      child.kill(SIGINT);
     });
   })().catch((e) => console.error(e));
 }
