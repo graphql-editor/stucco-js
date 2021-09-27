@@ -1,6 +1,6 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import fetch from 'node-fetch';
-import { join } from 'path';
+import { join, delimiter } from 'path';
 import { SIGINT } from 'constants';
 
 const node = process.platform === 'win32' ? 'node.exe' : 'node';
@@ -27,7 +27,8 @@ describe('test plugin integration', () => {
     // Use run.js directly to make sure process is terminated on windows
     const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
     const env = { ...process.env };
-    env.PATH = `${cwd}:${env.PATH || ''}`.replace(/:$/, '');
+    const p = delimiter + env.PATH || '';
+    env.PATH = `${cwd}${p.length > 1 ? p : ''}`.replace(/:$/, '');
     stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js'), 'local', 'start', '-v', '5'], {
       cwd,
       env,
