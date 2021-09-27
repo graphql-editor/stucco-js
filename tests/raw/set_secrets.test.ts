@@ -43,14 +43,12 @@ describe('raw setSecrets resolve type handler', () => {
           const req = new messages.SetSecretsRequest();
           const secrets: Array<[string, string]> = [['SECRET', 'VALUE']];
           req.setSecretsList(
-            secrets.map(
-              (secret): messages.Secret => {
-                const protoSecret = new messages.Secret();
-                protoSecret.setKey(secret[0]);
-                protoSecret.setValue(secret[1]);
-                return protoSecret;
-              },
-            ),
+            secrets.map((secret): messages.Secret => {
+              const protoSecret = new messages.Secret();
+              protoSecret.setKey(secret[0]);
+              protoSecret.setValue(secret[1]);
+              return protoSecret;
+            }),
           );
           return req.serializeBinary();
         })(),

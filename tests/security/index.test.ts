@@ -15,7 +15,7 @@ describe('multi auth', () => {
   const mockNotOkHandler = {
     authorize: () => Promise.resolve(false),
   };
-  const mockReq = ({} as unknown) as IncomingMessage;
+  const mockReq = {} as unknown as IncomingMessage;
   test('sets user handlers', () => expect(new MultiAuth([mockOkHandler]).authHandlers).toHaveLength(1));
   test('passes with one success', () =>
     expect(new MultiAuth([mockNotOkHandler, mockOkHandler]).authorize(mockReq)).toBeTruthy());

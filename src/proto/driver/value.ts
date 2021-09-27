@@ -89,13 +89,12 @@ export function getFromValue(value?: messages.Value, variables?: RecordOfValues)
   return;
 }
 
-const jspbMapReducer = (variables?: RecordOfValues) => (
-  m: jspb.Map<string, messages.Value>,
-  out: RecordOfUnknown,
-): RecordOfUnknown => {
-  m.forEach((v, k) => (out[k] = getFromValue(v, variables)));
-  return out;
-};
+const jspbMapReducer =
+  (variables?: RecordOfValues) =>
+  (m: jspb.Map<string, messages.Value>, out: RecordOfUnknown): RecordOfUnknown => {
+    m.forEach((v, k) => (out[k] = getFromValue(v, variables)));
+    return out;
+  };
 
 export const getRecordFromValueMap = (
   m: jspb.Map<string, messages.Value>,

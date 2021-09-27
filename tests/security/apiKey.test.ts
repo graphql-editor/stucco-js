@@ -2,7 +2,7 @@ import { ApiKeyAuth } from '../../src/security/apiKey';
 import { IncomingMessage } from 'http';
 
 describe('api key auth', () => {
-  const mockRequest = (headers: Record<string, string>) => (({ headers } as unknown) as IncomingMessage);
+  const mockRequest = (headers: Record<string, string>) => ({ headers } as unknown as IncomingMessage);
   const xStuccoApiKey = 'x-stucco-api-key';
   test('test authorizes valid x-stucco-api-key', () =>
     expect(new ApiKeyAuth('xyz').authorize(mockRequest({ [xStuccoApiKey]: 'xyz' }))).resolves.toBeTruthy());

@@ -138,11 +138,11 @@ describe('test http cert reader', () => {
     ];
     const reader = new HttpCertReader();
     await Promise.all(
-      reqMock.map((req) => expect(reader.ReadCert((req as unknown) as IncomingMessage)).resolves.toEqual(certs.cert)),
+      reqMock.map((req) => expect(reader.ReadCert(req as unknown as IncomingMessage)).resolves.toEqual(certs.cert)),
     );
   });
   describe('client cert auth', () => {
-    const mockRequest = ({} as unknown) as IncomingMessage;
+    const mockRequest = {} as unknown as IncomingMessage;
     const mockCertReader = {
       ReadCert: () => Promise.resolve(certs.cert),
     };

@@ -104,7 +104,7 @@ describe('grpc server', () => {
     createSslMock = jest.fn();
     grpc.ServerCredentials.createSsl = createSslMock.bind(grpc.ServerCredentials);
     mockedGrpc.Server.mockImplementation(() => {
-      return (grpcServerMock as unknown) as Server;
+      return grpcServerMock as unknown as Server;
     });
     mockHandlerModule = importer as jest.Mocked<typeof importer>;
     mockedDriverHandlers = driverHandlers as jest.Mocked<typeof driverHandlers>;
@@ -628,7 +628,7 @@ describe('grpc server', () => {
         wrappedFieldResolve = services.fieldResolve;
       },
     );
-    mockedProfiler.Profiler.mockImplementation(() => (profilerMock as unknown) as Profiler);
+    mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
     profilerMock.report.mockReturnValue('mocked report');
     new Server({ enableProfiling: true });
     const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<
@@ -663,7 +663,7 @@ describe('grpc server', () => {
         wrappedFieldResolve = services.fieldResolve;
       },
     );
-    mockedProfiler.Profiler.mockImplementation(() => (profilerMock as unknown) as Profiler);
+    mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
     profilerMock.report.mockReturnValue('');
     new Server();
     const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<

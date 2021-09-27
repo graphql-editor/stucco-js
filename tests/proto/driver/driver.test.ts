@@ -95,16 +95,14 @@ const setVariabledefinitions = (v: {
   setVariabledefinitionsList(vars: Array<messages.VariableDefinition>): void;
 }): void =>
   v.setVariabledefinitionsList(
-    expectedVariableDefinitions.map(
-      (variable): messages.VariableDefinition => {
-        const varDef = new messages.VariableDefinition();
-        varDef.setDefaultvalue(stringValue(variable.defaultValue));
-        const varName = new messages.Variable();
-        varName.setName(variable.variable.name);
-        varDef.setVariable(varName);
-        return varDef;
-      },
-    ),
+    expectedVariableDefinitions.map((variable): messages.VariableDefinition => {
+      const varDef = new messages.VariableDefinition();
+      varDef.setDefaultvalue(stringValue(variable.defaultValue));
+      const varName = new messages.Variable();
+      varName.setName(variable.variable.name);
+      varDef.setVariable(varName);
+      return varDef;
+    }),
   );
 
 const expectedOperation = {
@@ -247,11 +245,13 @@ const expectedArguments = {
   defaultVariableArg: 'defaultValue',
 };
 const setArguments = (v: { getArgumentsMap(): jspb.Map<string, messages.Value> }): void =>
-  ([
-    ['stringArg', stringValue('value')],
-    ['variableArg', variableValue('variable')],
-    ['defaultVariableArg', variableValue('defaultVariable')],
-  ] as Array<[string, messages.Value]>).forEach((arg) => {
+  (
+    [
+      ['stringArg', stringValue('value')],
+      ['variableArg', variableValue('variable')],
+      ['defaultVariableArg', variableValue('defaultVariable')],
+    ] as Array<[string, messages.Value]>
+  ).forEach((arg) => {
     v.getArgumentsMap().set(arg[0], arg[1]);
   });
 
