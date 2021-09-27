@@ -11,7 +11,7 @@
   "scripts": {
     "test": "jest",
     "test:e2e": "jest -c jest.e2e.config.js",
-    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"e2e/**/*.js\" \"*.js\"",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"*.js\"",
     "bump-stucco": "node scripts/bump_stucco.js",
     "clean": "rimraf lib/",
     "copyfiles": "copyfiles -u 1 src/cli/cli.cmd lib/",
