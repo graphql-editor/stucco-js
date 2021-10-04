@@ -36,11 +36,15 @@ describe('test plugin integration', () => {
       stdio: 'inherit',
     });
     await retry(
-      async () =>
-        fetch('http://localhost:8080/graphql', {
+      async () => {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 1000);
+        const resp = await fetch('http://localhost:8080/graphql', {
           method: 'OPTIONS',
-          timeout: 1000,
-        }),
+        })
+        clearTimeout(id);
+        return resp;
+      },
       5,
       2000,
     );

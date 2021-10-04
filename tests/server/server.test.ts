@@ -55,7 +55,7 @@ describe('grpc server', () => {
   let mockedDriverHandlers: jest.Mocked<typeof driverHandlers>;
   let mockedProfiler: jest.Mocked<typeof profiler>;
   let service: driverService.IDriverServer;
-  beforeEach(async (done) => {
+  beforeEach(async () => {
     jest.resetModules();
     jest.mock('../../src/handler');
     jest.mock('../../src/proto/driver');
@@ -115,7 +115,6 @@ describe('grpc server', () => {
     mockedDriverHandlers.setSecrets.mockReset();
     mockedDriverHandlers.unionResolveType.mockReset();
     mockedProfiler = profiler as jest.Mocked<typeof profiler>;
-    done();
   });
   it('adds services', async () => {
     const { Server } = await import('../../src/server/server');
