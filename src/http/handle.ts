@@ -6,6 +6,7 @@ import {
   scalarParseHandler,
   scalarSerializeHandler,
   setSecretsHandler,
+  subscriptionConnectionHandler,
 } from '../raw';
 
 export class UserError extends Error {}
@@ -34,6 +35,10 @@ export async function handleHTTPGrpc(contentType: string, body: Buffer): Promise
     case MessageType.SET_SECRETS_REQUEST:
       data = await setSecretsHandler(contentType, Uint8Array.from(body));
       responseMessageType = MessageType.SET_SECRETS_RESPONSE;
+      break;
+    case MessageType.SUBSCRIPTION_CONNECTION_REQUEST:
+      data = await subscriptionConnectionHandler(contentType, Uint8Array.from(body));
+      responseMessageType = MessageType.SUBSCRIPTION_CONNECTION_RESPONSE;
       break;
     default:
       throw new UserError('invalid message type');

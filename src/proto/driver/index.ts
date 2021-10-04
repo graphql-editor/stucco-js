@@ -494,7 +494,7 @@ class Emitter {
   }
 }
 
-export const subscritpionListen = (
+export const subscriptionListen = (
   srv: grpc.ServerWritableStream<messages.SubscriptionListenRequest, messages.SubscriptionListenMessage>,
   handler: (x: SubscriptionListenInput, emit: SubscriptionListenEmitter) => Promise<void>,
 ): Promise<void> =>

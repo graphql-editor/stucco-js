@@ -13,7 +13,7 @@ import {
   scalarSerialize,
   unionResolveType,
   subscriptionConnection,
-  subscritpionListen,
+  subscriptionListen,
 } from '../proto/driver';
 import { Writable } from 'stream';
 import { Profiler } from './profiler';
@@ -255,7 +255,7 @@ export class Server {
     const f = async () => {
       try {
         const handler = await getHandler<SubscriptionListenInput, void, SubscriptionListenEmitter>(srv.request);
-        await subscritpionListen(srv, handler);
+        await subscriptionListen(srv, handler);
       } catch (e) {
         console.error(e);
       }
