@@ -41,7 +41,7 @@ describe('test plugin integration', () => {
         const id = setTimeout(() => controller.abort(), 1000);
         const resp = await fetch('http://localhost:8080/graphql', {
           method: 'OPTIONS',
-        })
+        });
         clearTimeout(id);
         return resp;
       },
