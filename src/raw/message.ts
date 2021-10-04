@@ -87,6 +87,12 @@ export function getMessageType(mime?: MIME): MessageType | undefined {
     case 'unionresolvetyperesponse':
       messageType = MessageType.UNION_RESOLVE_TYPE_RESPONSE;
       break;
+    case 'subscriptionconnectionrequest':
+      messageType = MessageType.SUBSCRIPTION_CONNECTION_REQUEST;
+      break;
+    case 'subscriptionconnectionresponse':
+      messageType = MessageType.SUBSCRIPTION_CONNECTION_RESPONSE;
+      break;
   }
   return messageType;
 }
@@ -129,6 +135,12 @@ export function messageTypeToMime(mime: MessageType): string {
       break;
     case MessageType.UNION_RESOLVE_TYPE_RESPONSE:
       messageType += 'unionresolvetyperesponse';
+      break;
+    case MessageType.SUBSCRIPTION_CONNECTION_REQUEST:
+      messageType += 'subscriptionconnectionrequest';
+      break;
+    case MessageType.SUBSCRIPTION_CONNECTION_RESPONSE:
+      messageType += 'subscriptionconnectionresponse';
       break;
   }
   return messageType;
