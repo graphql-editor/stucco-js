@@ -10,7 +10,6 @@
         "declaration": true,
         "module": "es2020",
         "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
         "stripInternal": true,
         "moduleResolution": "node",
         "target": "es2020",
