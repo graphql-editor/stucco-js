@@ -1,6 +1,6 @@
 import { Argv } from 'yargs';
-import * as config from './plugin_cmds/config';
-import * as serve from './plugin_cmds/serve';
+import * as config from './plugin_cmds/config.js';
+import * as serve from './plugin_cmds/serve.js';
 
 export const command = 'plugin <command>';
 export const describe = 'Plugin server commands';

@@ -1,4 +1,4 @@
-import { MultiAuth, DefaultSecurity } from '../../src/security';
+import { MultiAuth, DefaultSecurity } from '../../src/security/index.js';
 import { IncomingMessage } from 'http';
 
 describe('multi auth', () => {

@@ -1,5 +1,5 @@
 //import { isFunction } from 'util';
-import { getMessageType, parseMIME, MessageType, messageTypeToMime } from '../raw/message';
+import { getMessageType, parseMIME, MessageType, messageTypeToMime } from '../raw/message.js';
 import {
   fieldResolveHandler,
   interfaceResolveTypeHandler,
@@ -7,7 +7,7 @@ import {
   scalarSerializeHandler,
   setSecretsHandler,
   subscriptionConnectionHandler,
-} from '../raw';
+} from '../raw/index.js';
 
 export class UserError extends Error {}
 

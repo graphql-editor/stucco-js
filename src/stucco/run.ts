@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
 import BinWrapper from 'bin-wrapper';
-import { spawn } from 'child_process';
-import { version } from './version';
+import { version } from './version.js';
 import binCheck from 'bin-check';
 import binVersionCheck from 'bin-version-check';
-import { retry } from '../util/util';
+import { retry } from '../util/util.js';
 import { rmdir } from 'fs';
 import { promisify } from 'util';
-import { join } from 'path';
-import { SIGINT } from 'constants';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const rmdirP = promisify(rmdir);
 
 const base = 'https://stucco-release.fra1.cdn.digitaloceanspaces.com';
@@ -41,18 +42,4 @@ export async function stucco(): Promise<BinWrapper> {
     throw new Error('could not find stucco binary');
   }
   return bin;
-}
-
-if (require.main === module) {
-  (async (): Promise<void> => {
-    const bin = await stucco();
-    const args = process.argv.length > 2 ? process.argv.slice(2) : ['local', 'start'];
-    const child = spawn(bin.path(), args, { stdio: [process.stdin, process.stdout, process.stderr] });
-    process.on('SIGTERM', () => {
-      child.kill(SIGINT);
-    });
-    process.on('SIGINT', () => {
-      child.kill(SIGINT);
-    });
-  })().catch((e) => console.error(e));
 }

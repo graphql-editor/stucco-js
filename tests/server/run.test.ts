@@ -1,4 +1,6 @@
-import { run, runPluginWith } from '../../src/server/run';
+import { jest } from '@jest/globals';
+
+import { run, runPluginWith } from '../../src/server/run.js';
 
 describe('local plugin server', () => {
   it('returns node config', () => {
@@ -6,7 +8,7 @@ describe('local plugin server', () => {
     const oldProcessArgv = process.argv;
     const fn = jest.fn();
     try {
-      process.stdout.write = fn;
+      process.stdout.write = fn as typeof process.stdout.write;
       process.argv = ['', '', 'config'];
       run({ version: 'v1.1.1' });
     } finally {
@@ -14,7 +16,7 @@ describe('local plugin server', () => {
       process.stdout.write = oldWrite;
     }
     expect(fn).toBeCalledTimes(1);
-    expect(JSON.parse(fn.mock.calls[0][0])).toEqual([
+    expect(JSON.parse(fn.mock.calls[0][0] as string)).toEqual([
       {
         provider: 'local',
         runtime: 'nodejs',
@@ -41,8 +43,8 @@ describe('local plugin server', () => {
     const oldOn = process.on;
     const oldOff = process.off;
     try {
-      process.on = mockProcessSignals.on;
-      process.removeListener = mockProcessSignals.removeListener;
+      process.on = mockProcessSignals.on as typeof process.on;
+      process.removeListener = mockProcessSignals.removeListener as typeof process.removeListener;
       runPluginWith(serverMock)();
     } finally {
       process.on = oldOn;
@@ -54,7 +56,7 @@ describe('local plugin server', () => {
     expect(mockProcessSignals.on.mock.calls[0][1]).toBeInstanceOf(Function);
     expect(mockProcessSignals.on.mock.calls[1][0]).toEqual('SIGTERM');
     expect(mockProcessSignals.on.mock.calls[1][1]).toBeInstanceOf(Function);
-    const stopCallback: () => unknown = mockProcessSignals.on.mock.calls[0][1];
+    const stopCallback = mockProcessSignals.on.mock.calls[0][1] as () => unknown;
     stopCallback();
     expect(mockProcessSignals.removeListener).toBeCalledTimes(2);
     expect(mockProcessSignals.removeListener.mock.calls[0][0]).toEqual('SIGINT');

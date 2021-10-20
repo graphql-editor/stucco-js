@@ -1,5 +1,5 @@
 import * as jspb from 'google-protobuf';
-import { messages } from 'stucco-ts-proto-gen';
+import * as messages from './messages.js';
 
 export type RecordOfValues = Record<string, messages.Value>;
 export type RecordOfUnknown = Record<string, unknown>;

@@ -1,6 +1,6 @@
-import { HttpRequest } from 'src/api';
-import { RecordOfUnknown, getFromValue } from './value';
-import { messages } from 'stucco-ts-proto-gen';
+import { HttpRequest } from '../../api/index.js';
+import { RecordOfUnknown, getFromValue } from './value.js';
+import * as messages from './messages.js';
 
 function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
   if (typeof protocol !== 'object' || protocol === null) {

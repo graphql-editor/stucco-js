@@ -1,8 +1,14 @@
-import { messages } from 'stucco-ts-proto-gen';
-import { fieldResolveHandler } from '../../src/raw/field_resolve';
+import { jest } from '@jest/globals';
+import * as messages from '../../src/proto/driver/messages';
+import { fieldResolveHandler } from '../../src/raw/field_resolve.js';
+import { join } from 'path';
 describe('raw field resolve handler', () => {
+  const cwd = process.cwd();
   beforeEach(() => {
-    jest.resetModules();
+    process.chdir(join(cwd, 'tests', 'raw', 'testdata'));
+  });
+  afterEach(() => {
+    process.chdir(cwd);
   });
   it('checks content type', async () => {
     const data: Array<{
@@ -40,25 +46,16 @@ describe('raw field resolve handler', () => {
     const req = new messages.FieldResolveRequest();
     req.setInfo(new messages.FieldResolveInfo());
     const func = new messages.Function();
-    func.setName('function');
+    func.setName('field_nil_resolve');
     req.setFunction(func);
     const expected = new messages.FieldResolveResponse();
     const nilObject = new messages.Value();
     nilObject.setNil(true);
     expected.setResponse(nilObject);
-    const handler = jest.fn();
-    jest.mock(
-      `${process.cwd()}/function`,
-      () => {
-        return handler;
-      },
-      { virtual: true },
-    );
     const response = await fieldResolveHandler(
       'application/x-protobuf;message=FieldResolveRequest',
       req.serializeBinary(),
     );
     expect(response).toEqual(expected.serializeBinary());
-    expect(handler).toHaveBeenCalledTimes(1);
   });
 });

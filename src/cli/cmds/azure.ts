@@ -1,5 +1,5 @@
 import { Argv } from 'yargs';
-import * as serve from './azure_cmds/serve';
+import * as serve from './azure_cmds/serve.js';
 
 export const command = 'azure <command>';
 export const describe = 'Azure Function commands';

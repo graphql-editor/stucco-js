@@ -1,4 +1,4 @@
-import { ApiKeyAuth } from '../../src/security/apiKey';
+import { ApiKeyAuth } from '../../src/security/apiKey.js';
 import { IncomingMessage } from 'http';
 
 describe('api key auth', () => {

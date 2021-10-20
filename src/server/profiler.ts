@@ -1,4 +1,4 @@
-import { WithFunction } from './server';
+import { WithFunction } from './server.js';
 
 export class Profiler {
   private startTime?: [number, number];

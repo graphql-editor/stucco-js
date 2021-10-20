@@ -1,4 +1,4 @@
-import { isListTypeRef, isNamedTypeRef, isNonNullTypeRef } from '../../src/api';
+import { isListTypeRef, isNamedTypeRef, isNonNullTypeRef } from '../../src/api/index.js';
 
 describe('handler assertion', () => {
   it('is named type', () => {

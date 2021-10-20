@@ -1,4 +1,4 @@
-import { parseMIME, getMessageType, MessageType, messageTypeToMime } from '../../src/raw/message';
+import { parseMIME, getMessageType, MessageType, messageTypeToMime } from '../../src/raw/message.js';
 
 describe('mime', () => {
   it('parsed', () => {

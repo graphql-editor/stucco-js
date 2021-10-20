@@ -19,14 +19,14 @@ import {
   SubscriptionConnectionOutput,
   SubscriptionListenInput,
   SubscriptionListenEmitter,
-} from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
-import { RecordOfUnknown, RecordOfValues, getFromValue, getRecordFromValueMap, valueFromAny } from './value';
-import { getProtocol } from './protocol';
-import { getSource } from './source';
-import { buildTypeRef } from './type_ref';
-import { buildResponsePath } from './response_path';
-import { buildOperationDefinition } from './operation';
+} from '../../api/index.js';
+import * as messages from './messages.js';
+import { RecordOfUnknown, RecordOfValues, getFromValue, getRecordFromValueMap, valueFromAny } from './value.js';
+import { getProtocol } from './protocol.js';
+import { getSource } from './source.js';
+import { buildTypeRef } from './type_ref.js';
+import { buildResponsePath } from './response_path.js';
+import { buildOperationDefinition } from './operation.js';
 import { EventEmitter } from 'events';
 
 interface ProtoInfoLike {

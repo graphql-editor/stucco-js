@@ -1,5 +1,5 @@
-import { TypeRef as APITypeRef } from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
+import { TypeRef as APITypeRef } from '../../api/index.js';
+import * as messages from './messages.js';
 
 export function buildTypeRef(tr: messages.TypeRef | undefined): APITypeRef | undefined {
   if (!tr) {

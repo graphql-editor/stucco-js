@@ -1,5 +1,6 @@
 import LRU from 'lru-cache';
-import { pki } from 'node-forge';
+import nodeForge from 'node-forge';
+const { pki } = nodeForge;
 import { IncomingMessage } from 'http';
 import { TLSSocket } from 'tls';
 import { v4 } from 'uuid';
@@ -58,7 +59,7 @@ interface ClientCertAuthOpts {
   uuid?: string;
 }
 export class ClientCertAuth {
-  private _store?: pki.CAStore;
+  private _store?: nodeForge.pki.CAStore;
   private ca: string | CaReader;
   private uuid: string;
   constructor(private certReader: CertReader, opts: ClientCertAuthOpts = {}) {
@@ -66,7 +67,7 @@ export class ClientCertAuth {
     this.ca = ca;
     this.uuid = uuid;
   }
-  private async store(): Promise<pki.CAStore> {
+  private async store(): Promise<nodeForge.pki.CAStore> {
     let { _store, ca } = this;
     if (!_store) {
       if (!ca) {

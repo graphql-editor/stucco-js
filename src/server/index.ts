@@ -1,2 +1,2 @@
-export { Server } from './server';
-export { run } from './run';
+export { Server } from './server.js';
+export { run } from './run.js';

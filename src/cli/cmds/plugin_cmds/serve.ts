@@ -1,5 +1,5 @@
 import { Argv, Arguments } from 'yargs';
-import { run } from '../../../server';
+import { run } from '../../../server/index.js';
 export const command = 'serve';
 export const describe = 'Run plugin stucco server';
 

@@ -1,8 +1,16 @@
-import { messages } from 'stucco-ts-proto-gen';
-import { unionResolveTypeHandler } from '../../src/raw/union_resolve_type';
+import { jest } from '@jest/globals';
+import { getHandler } from '../../src/handler/index.js';
+import { join } from 'path';
+
+import * as messages from '../../src/proto/driver/messages.js';
+import { unionResolveTypeHandler } from '../../src/raw/union_resolve_type.js';
 describe('raw union resolve type handler', () => {
+  const cwd = process.cwd();
   beforeEach(() => {
-    jest.resetModules();
+    process.chdir(join(cwd, 'tests', 'raw', 'testdata'));
+  });
+  afterEach(() => {
+    process.chdir(cwd);
   });
   it('checks content type', async () => {
     const data: Array<{
@@ -43,25 +51,16 @@ describe('raw union resolve type handler', () => {
     const req = new messages.UnionResolveTypeRequest();
     req.setInfo(new messages.UnionResolveTypeInfo());
     const func = new messages.Function();
-    func.setName('function');
+    func.setName('union_handler');
     req.setFunction(func);
     const expected = new messages.UnionResolveTypeResponse();
     const typeRef = new messages.TypeRef();
     typeRef.setName('SomeType');
     expected.setType(typeRef);
-    const handler = jest.fn(() => 'SomeType');
-    jest.mock(
-      `${process.cwd()}/function`,
-      () => {
-        return handler;
-      },
-      { virtual: true },
-    );
     const response = await unionResolveTypeHandler(
       'application/x-protobuf;message=UnionResolveTypeRequest',
       req.serializeBinary(),
     );
     expect(response).toEqual(expected.serializeBinary());
-    expect(handler).toHaveBeenCalledTimes(1);
   });
 });

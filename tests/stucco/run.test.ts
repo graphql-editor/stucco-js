@@ -1,6 +1,7 @@
+import { jest } from '@jest/globals';
 import { execFileSync } from 'child_process';
-import { stucco } from '../../src/stucco/run';
-import { version } from '../../src/stucco/version';
+import { stucco } from '../../src/stucco/run.js';
+import { version } from '../../src/stucco/version.js';
 
 describe('stucco', () => {
   // file downlaod, be a bit more permissive timeout

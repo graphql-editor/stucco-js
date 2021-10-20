@@ -1,9 +1,9 @@
-import { Selections, Selection as APISelection } from '../../api';
-import { RecordOfValues, getRecordFromValueMap } from './value';
-import { messages } from 'stucco-ts-proto-gen';
-import { buildDirectives } from './directive';
-import { buildTypeRef } from './type_ref';
-import { notUndefined } from '../../util/util';
+import { Selections, Selection as APISelection } from '../../api/index.js';
+import { RecordOfValues, getRecordFromValueMap } from './value.js';
+import * as messages from './messages.js';
+import { buildDirectives } from './directive.js';
+import { buildTypeRef } from './type_ref.js';
+import { notUndefined } from '../../util/util.js';
 
 function buildFragmentSelection(
   fragment?: messages.FragmentDefinition,

@@ -1,5 +1,5 @@
-import { messages } from 'stucco-ts-proto-gen';
-import { getFromValue } from './value';
+import * as messages from './messages.js';
+import { getFromValue } from './value.js';
 
 interface WithSource {
   hasSource(): boolean;

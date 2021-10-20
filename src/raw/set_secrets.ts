@@ -1,7 +1,7 @@
-import { setSecrets, makeProtoError } from '../proto/driver';
+import { setSecrets, makeProtoError } from '../proto/driver/index.js';
 import { messages } from 'stucco-ts-proto-gen';
-import { getMessageType, parseMIME, MessageType } from './message';
-import { SetSecretsOutput, SetSecretsInput } from '../api';
+import { getMessageType, parseMIME, MessageType } from './message.js';
+import { SetSecretsOutput, SetSecretsInput } from '../api/index.js';
 
 export async function setSecretsEnvironment(secrets: SetSecretsInput): Promise<SetSecretsOutput> {
   Object.keys(secrets.secrets).forEach((k) => {

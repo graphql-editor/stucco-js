@@ -3,7 +3,7 @@ import { PassThrough, Writable } from 'stream';
 type ErrorCallback = (error: Error | undefined | null) => void;
 type WriteFunc = Writable['write'];
 
-interface WriteStreamLike {
+export interface WriteStreamLike {
   write: WriteFunc;
 }
 

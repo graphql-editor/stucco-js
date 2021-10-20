@@ -1,13 +1,13 @@
-import { StreamHook } from './hook_stream';
+import { StreamHook } from './hook_stream.js';
 
 const stdout = new StreamHook(process.stdout);
 const stderr = new StreamHook(process.stderr);
 
-import { ConsoleHook } from './hook_console';
+import { ConsoleHook } from './hook_console.js';
 
 const consoleHook = new ConsoleHook(console);
 
-import { Server } from './server';
+import { Server } from './server.js';
 
 interface StoppableServer {
   serve(): Promise<void>;

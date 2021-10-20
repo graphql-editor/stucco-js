@@ -1,9 +1,9 @@
-import { OperationDefinition as APIOperationDefinition } from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
-import { RecordOfValues } from './value';
-import { buildDirectives } from './directive';
-import { buildSelections } from './selection';
-import { buildVariableDefinitions } from './variable_definition';
+import { OperationDefinition as APIOperationDefinition } from '../../api/index.js';
+import * as messages from './messages';
+import { RecordOfValues } from './value.js';
+import { buildDirectives } from './directive.js';
+import { buildSelections } from './selection.js';
+import { buildVariableDefinitions } from './variable_definition.js';
 
 export function buildOperationDefinition(
   od: messages.OperationDefinition | undefined,

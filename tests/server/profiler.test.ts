@@ -1,4 +1,4 @@
-import { Profiler } from '../../src/server/profiler';
+import { Profiler } from '../../src/server/profiler.js';
 
 describe('test profiler', () => {
   it('falsy report if not enabled', () => {

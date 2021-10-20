@@ -1,7 +1,7 @@
-import { VariableDefinition as APIVariableDefinition, VariableDefinitions as APIVariableDefinitions } from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
-import { getFromValue } from './value';
-import { notUndefined } from '../../util/util';
+import { VariableDefinition as APIVariableDefinition, VariableDefinitions as APIVariableDefinitions } from '../../api/index.js';
+import * as messages from './messages.js';
+import { getFromValue } from './value.js';
+import { notUndefined } from '../../util/util.js';
 
 const buildVariableDefinition = (vd: messages.VariableDefinition): APIVariableDefinition | undefined => ({
   defaultValue: getFromValue(vd.getDefaultvalue()),

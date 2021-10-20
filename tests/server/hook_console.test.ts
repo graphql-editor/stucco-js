@@ -1,3 +1,8 @@
+import { jest } from '@jest/globals';
+import type { Hooks } from '../../src/server/hook_console.js';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+
 describe('ConsoleHook', () => {
   beforeEach(() => {
     jest.resetModules();
@@ -10,7 +15,7 @@ describe('ConsoleHook', () => {
     );
   }
   it('creates and deletes a monkey patch', async () => {
-    const { ConsoleHook } = await import('../../src/server/hook_console');
+    const { ConsoleHook } = await import('../../src/server/hook_console.js');
     const mockConsole = {
       log: jest.fn(),
       info: jest.fn(),
@@ -28,7 +33,7 @@ describe('ConsoleHook', () => {
       error: jest.fn().mockReturnValue('hooked error'),
       trace: jest.fn().mockReturnValue('hooked trace'),
     };
-    const hook = new ConsoleHook(mockConsole, mockHooks);
+    const hook = new ConsoleHook(mockConsole, mockHooks as Hooks);
     expect(mockConsole.log).not.toBe(mockConsoleFunctions.log);
     expect(mockConsole.info).not.toBe(mockConsoleFunctions.info);
     expect(mockConsole.debug).not.toBe(mockConsoleFunctions.debug);
@@ -44,7 +49,7 @@ describe('ConsoleHook', () => {
     expect(mockConsole.trace).toBe(mockConsoleFunctions.trace);
   });
   it('hooks and unhooks', async () => {
-    const { ConsoleHook } = await import('../../src/server/hook_console');
+    const { ConsoleHook } = await import('../../src/server/hook_console.js');
     const mockConsole = {
       log: jest.fn(),
       info: jest.fn(),
@@ -63,7 +68,7 @@ describe('ConsoleHook', () => {
       trace: jest.fn().mockReturnValue('hooked trace'),
     };
     const errorCalls = mockConsoleFunctions.error.mock.calls;
-    const hook = new ConsoleHook(mockConsole, mockHooks);
+    const hook = new ConsoleHook(mockConsole, mockHooks as Hooks);
     mockConsole.log('log');
     expect(mockConsoleFunctions.log).toHaveBeenLastCalledWith('log');
     mockConsole.info('info');
@@ -75,7 +80,7 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('error');
     mockConsole.trace('trace');
-    traceExpect.call(global, errorCalls[errorCalls.length - 1][0]);
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0] as string);
     hook.hook();
     mockConsole.log('log');
     expect(mockConsoleFunctions.log).toHaveBeenLastCalledWith('hooked log');
@@ -101,11 +106,11 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('error');
     mockConsole.trace('trace');
-    traceExpect.call(global, errorCalls[errorCalls.length - 1][0]);
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0] as string);
     hook.delete();
   });
   it('adds level prefix', async () => {
-    const { ConsoleHook } = await import('../../src/server/hook_console');
+    const { ConsoleHook } = await import('../../src/server/hook_console.js');
     const mockConsole = {
       log: jest.fn(),
       info: jest.fn(),
@@ -129,11 +134,11 @@ describe('ConsoleHook', () => {
     mockConsole.error('error');
     expect(mockConsoleFunctions.error).toHaveBeenLastCalledWith('[ERROR]error');
     mockConsole.trace('trace');
-    traceExpect.call(global, errorCalls[errorCalls.length - 1][0], '[TRACE]Trace: trace');
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0] as string, '[TRACE]Trace: trace');
     hook.delete();
   });
   it('Trace without message', async () => {
-    const { ConsoleHook } = await import('../../src/server/hook_console');
+    const { ConsoleHook } = await import('../../src/server/hook_console.js');
     const mockConsole = {
       log: jest.fn(),
       info: jest.fn(),
@@ -146,7 +151,7 @@ describe('ConsoleHook', () => {
     const hook = new ConsoleHook(mockConsole);
     const errorCalls = mockConsoleFunctions.error.mock.calls;
     mockConsole.trace();
-    traceExpect.call(global, errorCalls[errorCalls.length - 1][0], 'Trace');
+    traceExpect.call(global, errorCalls[errorCalls.length - 1][0] as string, 'Trace');
     hook.delete();
   });
 });

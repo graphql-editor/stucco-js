@@ -1,8 +1,8 @@
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
 import { Readable } from 'stream';
-import { handleHTTPGrpc, UserError } from '../../../http/handle';
-import { ClientCertAuth, createPEM } from '../../../security';
+import { handleHTTPGrpc, UserError } from '../../../http/handle.js';
+import { ClientCertAuth, createPEM } from '../../../security/index.js';
 import { readFile } from 'fs';
 
 export const command = 'serve';

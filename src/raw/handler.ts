@@ -1,7 +1,7 @@
-import { MessageType, getMessageType, parseMIME } from './message';
-import { getHandler, WithFunction } from '../handler';
-import { messages } from 'stucco-ts-proto-gen';
-import { makeProtoError } from '../proto/driver';
+import { MessageType, getMessageType, parseMIME } from './message.js';
+import { getHandler, WithFunction } from '../handler/index.js';
+import * as messages from './../proto/driver/messages.js';
+import { makeProtoError } from '../proto/driver/index.js';
 
 interface Deserializable<T extends WithFunction> {
   deserializeBinary(data: Uint8Array): T;

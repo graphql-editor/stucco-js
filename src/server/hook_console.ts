@@ -32,7 +32,7 @@ function defaultTrace(data: unknown, ...optionalParams: unknown[]): string {
   return stack || '<no stack information>';
 }
 
-interface Hooks {
+export interface Hooks {
   [k: string]: ((data: unknown, ...optionalParams: unknown[]) => string) | undefined;
   log?: (data: unknown, ...optionalParams: unknown[]) => string;
   info?: (data: unknown, ...optionalParams: unknown[]) => string;

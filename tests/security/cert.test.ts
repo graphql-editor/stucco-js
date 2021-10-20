@@ -1,5 +1,6 @@
-import { HttpCertReader } from '../../src/security';
-import { ClientCertAuth } from '../../src/security/cert';
+import { jest } from '@jest/globals';
+import { HttpCertReader } from '../../src/security/index.js';
+import { ClientCertAuth } from '../../src/security/cert.js';
 import { IncomingMessage } from 'http';
 
 // Password to CA abcdef

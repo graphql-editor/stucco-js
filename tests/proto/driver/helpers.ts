@@ -1,4 +1,4 @@
-import { messages } from 'stucco-ts-proto-gen';
+import * as messages from '../../../src/proto/driver/messages.js';
 
 export function anyValue(data: Uint8Array): messages.Value {
   const v = new messages.Value();

@@ -26,12 +26,12 @@ const retry = <T>(fn: () => Promise<T>, retries: number, timeout: number): Promi
 describe('test plugin integration', () => {
   let stuccoProccess: ChildProcess;
   beforeAll(async () => {
-    // Use run.js directly to make sure process is terminated on windows
+    // Use cmd.js directly to make sure process is terminated on windows
     const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
     const env = { ...process.env };
     const p = (env[pathKey] && delimiter + env[pathKey]) || '';
     env[pathKey] = `${cwd}${p.length > 1 ? p : ''}`;
-    stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js'), 'local', 'start', '-v', '5'], {
+    stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'cmd.js'), 'local', 'start', '-v', '5'], {
       cwd,
       env,
       stdio: 'inherit',

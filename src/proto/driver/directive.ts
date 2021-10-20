@@ -1,8 +1,8 @@
-import { Directive as APIDirective, Directives as APIDirectives } from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
-import { RecordOfValues, getRecordFromValueMap } from './value';
+import { Directive as APIDirective, Directives as APIDirectives } from '../../api/index.js';
+import { Directive } from './messages.js';
+import { RecordOfValues, getRecordFromValueMap } from './value.js';
 
-function buildDirective(dir: messages.Directive, variables?: RecordOfValues): APIDirective {
+function buildDirective(dir: Directive, variables?: RecordOfValues): APIDirective {
   const args = getRecordFromValueMap(dir.getArgumentsMap(), variables);
   return {
     ...(Object.keys(args).length > 0 && { arguments: args }),
@@ -10,5 +10,5 @@ function buildDirective(dir: messages.Directive, variables?: RecordOfValues): AP
   };
 }
 
-export const buildDirectives = (dirs: messages.Directive[], variables?: RecordOfValues): APIDirectives | undefined =>
+export const buildDirectives = (dirs: Directive[], variables?: RecordOfValues): APIDirectives | undefined =>
   dirs.length > 0 ? dirs.map((dir) => buildDirective(dir, variables)) : undefined;

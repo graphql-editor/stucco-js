@@ -1,9 +1,10 @@
 import { readFileSync } from 'fs';
 import * as grpc from '@grpc/grpc-js';
 import { GrpcHealthCheck, HealthCheckResponse, HealthService } from 'grpc-health-check-ts';
-import { SubscriptionListenInput, SubscriptionListenEmitter } from '../api';
-import { getHandler } from '../handler';
-import { driverService, messages } from 'stucco-ts-proto-gen';
+import { SubscriptionListenInput, SubscriptionListenEmitter } from '../api/index.js';
+import { getHandler } from '../handler/index.js';
+import * as messages from '../proto/driver/messages.js';
+import * as driverService from '../proto/driver/driver_service.js';
 import {
   fieldResolve,
   interfaceResolveType,
@@ -14,10 +15,10 @@ import {
   unionResolveType,
   subscriptionConnection,
   subscriptionListen,
-} from '../proto/driver';
+} from '../proto/driver/index.js';
 import { Writable } from 'stream';
-import { Profiler } from './profiler';
-import { setSecretsEnvironment } from '../raw/set_secrets';
+import { Profiler } from './profiler.js';
+import { setSecretsEnvironment } from '../raw/set_secrets.js';
 
 type ServerStatusResponse = Partial<grpc.StatusObject>;
 type ServerErrorResponse = ServerStatusResponse & Error;
@@ -45,7 +46,7 @@ function isCallRequestWithFunction<T, U>(
   );
 }
 
-interface ServerOptions {
+export interface ServerOptions {
   bindAddress?: string;
   enableProfiling?: boolean;
   pluginMode?: boolean;
@@ -60,7 +61,7 @@ interface ServerOptions {
   consoleHook?: ConsoleHook;
 }
 
-interface GRPCServer {
+export interface GRPCServer {
   start: typeof grpc.Server.prototype.start;
   addService: typeof grpc.Server.prototype.addService;
   tryShutdown: typeof grpc.Server.prototype.tryShutdown;

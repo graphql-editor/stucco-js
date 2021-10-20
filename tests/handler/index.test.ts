@@ -1,3 +1,6 @@
+import { join } from 'path';
+import { getHandler } from '../../src/handler/index.js';
+
 interface WithFunction {
   hasFunction(): boolean;
   getFunction(): { getName: () => string } | undefined;
@@ -12,64 +15,46 @@ describe('handler', () => {
       }),
     };
   };
+  const cwd = process.cwd();
   beforeEach(() => {
-    jest.resetModules();
+    process.chdir(join(cwd, 'tests', 'handler', 'testdata'));
+  });
+  afterEach(() => {
+    process.chdir(cwd);
   });
   it('throws when function is missing', async () => {
-    const { getHandler } = await import('../../src/handler');
     await expect(
       getHandler({ hasFunction: (): boolean => false, getFunction: () => undefined }),
     ).rejects.toHaveProperty('message');
   });
   it('throws when function name is empty', async () => {
-    const { getHandler } = await import('../../src/handler');
     await expect(getHandler(mockWithFunction(''))).rejects.toHaveProperty('message');
   });
   it('imports commonjs default export', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => handler, { virtual: true });
-    (await getHandler(mockWithFunction('function')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('commonjs_default')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('imports commonjs handler export if name empty', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => ({ handler: handler }), { virtual: true });
-    (await getHandler(mockWithFunction('function')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('commonjs_handler')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('imports commonjs named function', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => ({ fnname: handler }), { virtual: true });
-    (await getHandler(mockWithFunction('function.fnname')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('commonjs_named.fnname')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('imports es module default function', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => ({ __esModule: true, default: handler }), { virtual: true });
-    (await getHandler(mockWithFunction('function')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('esm_default')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('imports es handler export if name empty', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => ({ __esModule: true, handler: handler }), { virtual: true });
-    (await getHandler(mockWithFunction('function')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('esm_handler')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('imports es named function', async () => {
-    const { getHandler } = await import('../../src/handler');
-    const handler = jest.fn();
-    jest.mock(`${process.cwd()}/function`, () => ({ __esModule: true, fnname: handler }), { virtual: true });
-    (await getHandler(mockWithFunction('function.fnname')))(1);
-    expect(handler).toHaveBeenCalledTimes(1);
+    const v = (await getHandler(mockWithFunction('esm_named.fnname')) as (arg: unknown) => unknown)(1);
+    expect(v).resolves.toEqual(1);
   });
   it('throws if function not defined', async () => {
-    const { getHandler } = await import('../../src/handler');
-    jest.mock(`${process.cwd()}/function`);
-    await expect(getHandler(mockWithFunction('function'))).rejects.toHaveProperty('message');
+    expect(getHandler(mockWithFunction('function'))).rejects.toHaveProperty('message');
   });
 });

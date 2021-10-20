@@ -1,4 +1,4 @@
-import * as value from '../../../src/proto/driver/value';
+import * as value from '../../../src/proto/driver/value.js';
 import {
   nilValue,
   anyValue,
@@ -10,8 +10,8 @@ import {
   booleanValue,
   objValue,
   variableValue,
-} from './helpers';
-import { messages } from 'stucco-ts-proto-gen';
+} from './helpers.js';
+import * as messages from '../../../src/proto/driver/messages.js';
 
 describe('value marshaling/unmarshaling', () => {
   it('marshals undefined and null', () => {

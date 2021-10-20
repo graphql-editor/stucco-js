@@ -1,8 +1,8 @@
-import { subscriptionConnection } from '../proto/driver';
-import { messages } from 'stucco-ts-proto-gen';
-import { MessageType } from './message';
-import { SubscriptionConnectionInput, SubscriptionConnectionOutput } from '../api';
-import { handler } from './handler';
+import { subscriptionConnection } from '../proto/driver/index.js';
+import * as messages from './../proto/driver/messages.js';
+import { MessageType } from './message.js';
+import { SubscriptionConnectionInput, SubscriptionConnectionOutput } from '../api/index.js';
+import { handler } from './handler.js';
 
 export async function subscriptionConnectionHandler(contentType: string, body: Uint8Array): Promise<Uint8Array> {
   return handler<

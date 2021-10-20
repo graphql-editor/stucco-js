@@ -1,132 +1,24 @@
-let mockReadFileSync = false;
-const mockedReadFileSync = jest.fn();
+import { jest } from '@jest/globals';
+import { join } from 'path';
+import { HealthService } from 'grpc-health-check-ts';
+import * as driverGrpcPb from '../../src/proto/driver/driver_service.js';
+import * as messages from '../../src/proto/driver/messages.js';
+import { Server, ServerOptions, GRPCServer } from '../../src/server/server.js';
+import { ServerUnaryCall } from '@grpc/grpc-js';
 import { Writable } from 'stream';
-import {
-  ServerUnaryCall,
-  Server,
-  ServiceDefinition,
-  UntypedServiceImplementation,
-  handleUnaryCall,
-  ServerCredentials,
-} from '@grpc/grpc-js';
-import { Profiler } from '../../src/server/profiler';
-import { messages, driverService } from 'stucco-ts-proto-gen';
-
-const realCreateInsecure = ServerCredentials.createInsecure;
-
-function doTestCall<T, U>(fn: handleUnaryCall<T, U>, call: ServerUnaryCall<T, U>): Promise<U> {
-  return new Promise<U>((resolve, reject) => {
-    fn(call, (e, v) => {
-      if (e) {
-        reject(e);
-        return;
-      }
-      if (v) {
-        resolve(v);
-        return;
-      }
-      reject(new Error('ttttt'));
-    });
-  });
-}
 
 describe('grpc server', () => {
-  let healthCheck: typeof import('grpc-health-check-ts');
-  let driverGrpcPb: typeof import('stucco-ts-proto-gen').driverService;
-  let driverPb: typeof import('stucco-ts-proto-gen').messages;
-  let grpc: typeof import('@grpc/grpc-js');
-  let profiler: typeof import('../../src/server/profiler');
-  let importer: typeof import('../../src/handler');
-  let driverHandlers: typeof import('../../src/proto/driver');
-  let mockedGrpc: jest.Mocked<typeof grpc>;
-  let grpcServerMock: {
-    addService: jest.Mock;
-    bind: jest.Mock;
-    start: jest.Mock;
-    tryShutdown: jest.Mock;
-    register: jest.Mock;
-    forceShutdown: jest.Mock;
-    addProtoService: jest.Mock;
-    bindAsync: jest.Mock;
-  };
-  let createInsecureMock: jest.Mock;
-  let createSslMock: jest.Mock;
-  let mockHandlerModule: jest.Mocked<typeof importer>;
-  let mockedDriverHandlers: jest.Mocked<typeof driverHandlers>;
-  let mockedProfiler: jest.Mocked<typeof profiler>;
-  let service: driverService.IDriverServer;
-  beforeEach(async () => {
-    jest.resetModules();
-    jest.mock('../../src/handler');
-    jest.mock('../../src/proto/driver');
-    jest.mock('@grpc/grpc-js');
-    jest.mock('fs', () => {
-      const fs = jest.requireActual('fs');
-      return {
-        ...fs,
-        readFileSync: (...args: unknown[]): unknown => {
-          if (mockReadFileSync) {
-            return mockedReadFileSync(...args);
-          }
-          return fs.readFileSync(...args);
-        },
-      };
-    });
-    jest.mock('../../src/server/profiler');
-    healthCheck = await import('grpc-health-check-ts');
-    grpc = await import('@grpc/grpc-js');
-    profiler = await import('../../src/server/profiler');
-    importer = await import('../../src/handler');
-    driverHandlers = await import('../../src/proto/driver');
-    driverGrpcPb = await import('stucco-ts-proto-gen').then((m) => m.driverService);
-    driverPb = await import('stucco-ts-proto-gen').then((m) => m.messages);
-    mockedGrpc = grpc as jest.Mocked<typeof grpc>;
-    grpcServerMock = {
-      addService: jest
-        .fn()
-        .mockImplementation(
-          (def: ServiceDefinition<UntypedServiceImplementation>, impl: UntypedServiceImplementation) => {
-            if ('fieldResolve' in def) {
-              service = impl as driverService.IDriverServer;
-            }
-          },
-        ),
-      bind: jest.fn(),
-      start: jest.fn(),
-      tryShutdown: jest.fn(),
-      register: jest.fn(),
-      forceShutdown: jest.fn(),
-      addProtoService: jest.fn(),
-      bindAsync: jest.fn(),
-    };
-    createInsecureMock = jest.fn();
-    grpc.ServerCredentials.createInsecure = createInsecureMock.bind(grpc.ServerCredentials);
-    createSslMock = jest.fn();
-    grpc.ServerCredentials.createSsl = createSslMock.bind(grpc.ServerCredentials);
-    mockedGrpc.Server.mockImplementation(() => {
-      return grpcServerMock as unknown as Server;
-    });
-    mockHandlerModule = importer as jest.Mocked<typeof importer>;
-    mockedDriverHandlers = driverHandlers as jest.Mocked<typeof driverHandlers>;
-    mockedDriverHandlers.fieldResolve.mockReset();
-    mockedDriverHandlers.interfaceResolveType.mockReset();
-    mockedDriverHandlers.scalarParse.mockReset();
-    mockedDriverHandlers.scalarSerialize.mockReset();
-    mockedDriverHandlers.setSecrets.mockReset();
-    mockedDriverHandlers.unionResolveType.mockReset();
-    mockedProfiler = profiler as jest.Mocked<typeof profiler>;
-  });
   it('adds services', async () => {
-    const { Server } = await import('../../src/server/server');
-    new Server();
-    expect(grpcServerMock.addService).toBeCalledWith(
-      healthCheck.HealthService,
+    const addService = jest.fn();
+    new Server({ server: { addService } as unknown as GRPCServer });
+    expect(addService).toBeCalledWith(
+      HealthService,
       expect.objectContaining({
         check: expect.anything(),
         watch: expect.anything(),
       }),
     );
-    expect(grpcServerMock.addService).toBeCalledWith(
+    expect(addService).toBeCalledWith(
       driverGrpcPb.DriverService,
       expect.objectContaining({
         fieldResolve: expect.anything(),
@@ -136,290 +28,38 @@ describe('grpc server', () => {
         unionResolveType: expect.anything(),
       }),
     );
-    expect(grpcServerMock.addService).toBeCalledTimes(2);
+    expect(addService).toBeCalledTimes(2);
   });
   it('starts', async () => {
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server();
+    const addService = jest.fn();
+    const start = jest.fn();
+    const srv = new Server({ server: { start, addService } as unknown as GRPCServer });
     srv.start();
-    expect(grpcServerMock.start).toHaveBeenCalled();
+    expect(start).toHaveBeenCalled();
   });
   it('handle start error', async () => {
+    const addService = jest.fn();
     const err = new Error();
-    grpcServerMock.start.mockImplementation(() => {
+    const start = jest.fn().mockImplementation(() => {
       throw err;
     });
     const consoleErrorSpy = jest.spyOn(console, 'error');
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server();
+    const srv = new Server({ server: { start, addService } as unknown as GRPCServer });
     srv.start();
     expect(consoleErrorSpy).toHaveBeenCalledWith(err);
     consoleErrorSpy.mockClear();
   });
   it('handle start error without message', async () => {
-    const { Server } = await import('../../src/server/server');
-    grpcServerMock.start.mockImplementation(() => {
-      throw {};
+    const addService = jest.fn();
+    const err = new Error();
+    const start = jest.fn().mockImplementation(() => {
+      throw err;
     });
     const stderrWriteSpy = jest.spyOn(process.stderr, 'write');
-    const srv = new Server();
+    const srv = new Server({ server: { start, addService } as unknown as GRPCServer });
     srv.start();
     expect(stderrWriteSpy).not.toHaveBeenCalled();
     stderrWriteSpy.mockClear();
-  });
-  it('calls field resolve handler', async () => {
-    const { Server } = await import('../../src/server/server');
-    const request = new driverPb.FieldResolveRequest();
-    const expected = new driverPb.FieldResolveResponse();
-    const handler = jest.fn();
-    mockHandlerModule.getHandler.mockResolvedValue(handler);
-    mockedDriverHandlers.fieldResolve.mockResolvedValue(expected);
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
-    const resp = await doTestCall(service.fieldResolve, call);
-    expect(resp).toBe(expected);
-  });
-  it('catches field resolve import error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.FieldResolveRequest();
-    const expected = new driverPb.FieldResolveResponse();
-    expected.setError(expectedDriverError);
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
-    const resp = await doTestCall(service.fieldResolve, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches field resolve user error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.fieldResolve.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.FieldResolveRequest();
-    const expected = new driverPb.FieldResolveResponse();
-    expected.setError(expectedDriverError);
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
-    const resp = await doTestCall(service.fieldResolve, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('calls interface resolve type handler', async () => {
-    const { Server } = await import('../../src/server/server');
-    const request = new driverPb.InterfaceResolveTypeRequest();
-    const expected = new driverPb.InterfaceResolveTypeResponse();
-    const handler = jest.fn();
-    mockHandlerModule.getHandler.mockResolvedValue(handler);
-    mockedDriverHandlers.interfaceResolveType.mockResolvedValue(expected);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<
-      messages.InterfaceResolveTypeRequest,
-      messages.InterfaceResolveTypeResponse
-    >;
-    const resp = await doTestCall(service.interfaceResolveType, call);
-    expect(resp).toBe(expected);
-  });
-  it('catches interface resolve type import error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.InterfaceResolveTypeRequest();
-    const expected = new driverPb.InterfaceResolveTypeResponse();
-    expected.setError(expectedDriverError);
-    new Server();
-    const call = { request } as ServerUnaryCall<
-      messages.InterfaceResolveTypeRequest,
-      messages.InterfaceResolveTypeResponse
-    >;
-    const resp = await doTestCall(service.interfaceResolveType, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches interface resolve type user error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.interfaceResolveType.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.InterfaceResolveTypeRequest();
-    const expected = new driverPb.InterfaceResolveTypeResponse();
-    expected.setError(expectedDriverError);
-    new Server();
-    const call = { request } as ServerUnaryCall<
-      messages.InterfaceResolveTypeRequest,
-      messages.InterfaceResolveTypeResponse
-    >;
-    const resp = await doTestCall(service.interfaceResolveType, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('sets environment variables for secrets', async () => {
-    const { Server } = await import('../../src/server/server');
-    const secrets: Array<[string, string]> = [['SECRET', 'VALUE']];
-    const request = new driverPb.SetSecretsRequest();
-    const expected = new driverPb.SetSecretsResponse();
-    mockedDriverHandlers.setSecrets.mockResolvedValue(expected);
-    request.setSecretsList(
-      secrets.map((secret) => {
-        const protoSecret = new driverPb.Secret();
-        protoSecret.setKey(secret[0]);
-        protoSecret.setValue(secret[0]);
-        return protoSecret;
-      }),
-    );
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.SetSecretsRequest, messages.SetSecretsResponse>;
-    const resp = await doTestCall(service.setSecrets, call);
-    expect(resp).toBe(expected);
-  });
-  it('calls scalar parse type handler', async () => {
-    const { Server } = await import('../../src/server/server');
-    const request = new driverPb.ScalarParseRequest();
-    const expected = new driverPb.ScalarParseResponse();
-    const handler = jest.fn();
-    mockHandlerModule.getHandler.mockResolvedValue(handler);
-    mockedDriverHandlers.scalarParse.mockResolvedValue(expected);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
-    const resp = await doTestCall(service.scalarParse, call);
-    expect(resp).toBe(expected);
-  });
-  it('catches scalar parse import error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.ScalarParseRequest();
-    const expected = new driverPb.ScalarParseResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
-    const resp = await doTestCall(service.scalarParse, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches scalar parse user error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.scalarParse.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.ScalarParseRequest();
-    const expected = new driverPb.ScalarParseResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
-    const resp = await doTestCall(service.scalarParse, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('calls scalar serialize type handler', async () => {
-    const { Server } = await import('../../src/server/server');
-    const request = new driverPb.ScalarSerializeRequest();
-    const expected = new driverPb.ScalarSerializeResponse();
-    const handler = jest.fn();
-    mockHandlerModule.getHandler.mockResolvedValue(handler);
-    mockedDriverHandlers.scalarSerialize.mockResolvedValue(expected);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
-    const resp = await doTestCall(service.scalarSerialize, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches scalar serialize import error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.ScalarSerializeRequest();
-    const expected = new driverPb.ScalarSerializeResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
-    const resp = await doTestCall(service.scalarSerialize, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches scalar serialize user error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.scalarSerialize.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.ScalarSerializeRequest();
-    const expected = new driverPb.ScalarSerializeResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
-    const resp = await doTestCall(service.scalarSerialize, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('calls union resolve type handler', async () => {
-    const { Server } = await import('../../src/server/server');
-    const request = new driverPb.UnionResolveTypeRequest();
-    const expected = new driverPb.UnionResolveTypeResponse();
-    const handler = jest.fn();
-    mockHandlerModule.getHandler.mockResolvedValue(handler);
-    mockedDriverHandlers.unionResolveType.mockResolvedValue(expected);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
-    const resp = await doTestCall(service.unionResolveType, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches union resolve type import error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.UnionResolveTypeRequest();
-    const expected = new driverPb.UnionResolveTypeResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
-    const resp = await doTestCall(service.unionResolveType, call);
-    expect(resp.getError()).toBe(expected.getError());
-  });
-  it('catches union resolve type user error ', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.unionResolveType.mockRejectedValue(new Error('some error'));
-    const expectedDriverError = new driverPb.Error();
-    expectedDriverError.setMsg('some error');
-    mockedDriverHandlers.makeProtoError.mockReturnValue(expectedDriverError);
-
-    const request = new driverPb.UnionResolveTypeRequest();
-    const expected = new driverPb.UnionResolveTypeResponse();
-    expected.setError(expectedDriverError);
-
-    new Server();
-    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
-    const resp = await doTestCall(service.unionResolveType, call);
-    expect(resp.getError()).toBe(expected.getError());
   });
   it('hook wires data through grpc stdout', async () => {
     const hook = {
@@ -428,35 +68,35 @@ describe('grpc server', () => {
       hook: jest.fn(),
       unhook: jest.fn(),
     };
-    const { Server } = await import('../../src/server/server');
     const fakeStdout = jest.fn();
     let stdout: (call: Writable) => void = fakeStdout;
-    grpcServerMock.addService.mockImplementation(
+    const addService = jest.fn().mockImplementation((
       (
         _: unknown,
         services: {
           stdout: (call: Writable) => void;
         },
-      ): void => {
+      ) => {
         stdout = services.stdout;
-      },
+      }) as (...args: unknown[]) => unknown,
     );
     new Server({
       stdoutHook: hook,
-    });
+      server: { addService } as unknown as GRPCServer,
+    } as ServerOptions);
     expect(hook.on).toHaveBeenCalledWith('data', expect.any(Function));
     expect(hook.on).toHaveBeenCalledWith('end', expect.any(Function));
     const writeMock = jest.fn();
     const writer = new Writable();
-    writer.write = writeMock;
+    writer.write = writeMock as typeof writer.write;
     stdout(writer);
     const expectByteStreamMessage = (msg: string): void => {
-      const byteStream = new driverPb.ByteStream();
+      const byteStream = new messages.ByteStream();
       byteStream.setData(Uint8Array.from(Buffer.from(msg)));
       expect(writeMock).toHaveBeenLastCalledWith(byteStream, expect.anything());
       writeMock.mockClear();
     };
-    const dataListener: (buf: Buffer) => void = hook.on.mock.calls[0][1];
+    const dataListener: (buf: Buffer) => void = hook.on.mock.calls[0][1] as (buf: Buffer) => void;
     dataListener(Buffer.from('data'));
     expectByteStreamMessage('data');
     expect(fakeStdout).not.toHaveBeenCalled();
@@ -468,13 +108,12 @@ describe('grpc server', () => {
       hook: jest.fn(),
       unhook: jest.fn(),
     };
-    const { Server } = await import('../../src/server/server');
     new Server({
       stdoutHook: hook,
-    });
+    } as ServerOptions);
     expect(hook.on).toHaveBeenCalledWith('data', expect.any(Function));
     expect(hook.on).toHaveBeenCalledWith('end', expect.any(Function));
-    const endListener: () => void = hook.on.mock.calls[1][1];
+    const endListener: () => void = hook.on.mock.calls[1][1] as () => void;
     endListener();
     expect(hook.removeListener).toHaveBeenCalledWith('data', hook.on.mock.calls[0][1]);
   });
@@ -485,35 +124,35 @@ describe('grpc server', () => {
       hook: jest.fn(),
       unhook: jest.fn(),
     };
-    const { Server } = await import('../../src/server/server');
     const fakeStderr = jest.fn();
     let stderr: (call: Writable) => void = fakeStderr;
-    grpcServerMock.addService.mockImplementation(
-      (
+    const addService = jest.fn().mockImplementation(
+      ((
         _: unknown,
         services: {
           stderr: (call: Writable) => void;
         },
       ): void => {
         stderr = services.stderr;
-      },
+      }) as (...args: unknown[]) => unknown,
     );
     new Server({
       stderrHook: hook,
-    });
+      server: { addService } as unknown as GRPCServer,
+    } as ServerOptions);
     expect(hook.on).toHaveBeenCalledWith('data', expect.any(Function));
     expect(hook.on).toHaveBeenCalledWith('end', expect.any(Function));
     const writeMock = jest.fn();
     const writer = new Writable();
-    writer.write = writeMock;
+    writer.write = writeMock as typeof writer.write;
     stderr(writer);
     const expectByteStreamMessage = (msg: string): void => {
-      const byteStream = new driverPb.ByteStream();
+      const byteStream = new messages.ByteStream();
       byteStream.setData(Uint8Array.from(Buffer.from(msg)));
       expect(writeMock).toHaveBeenLastCalledWith(byteStream, expect.anything());
       writeMock.mockClear();
     };
-    const dataListener: (buf: Buffer) => void = hook.on.mock.calls[0][1];
+    const dataListener: (buf: Buffer) => void = hook.on.mock.calls[0][1] as (buf: Buffer) => void;
     dataListener(Buffer.from('data'));
     expectByteStreamMessage('data');
     expect(fakeStderr).not.toHaveBeenCalled();
@@ -525,162 +164,336 @@ describe('grpc server', () => {
       hook: jest.fn(),
       unhook: jest.fn(),
     };
-    const { Server } = await import('../../src/server/server');
     new Server({
       stderrHook: hook,
-    });
+    } as ServerOptions);
     expect(hook.on).toHaveBeenCalledWith('data', expect.any(Function));
     expect(hook.on).toHaveBeenCalledWith('end', expect.any(Function));
-    const endListener: () => void = hook.on.mock.calls[1][1];
+    const endListener: () => void = hook.on.mock.calls[1][1] as () => void;
     endListener();
     expect(hook.removeListener).toHaveBeenCalledWith('data', hook.on.mock.calls[0][1]);
   });
-  it('creates insecure credentials for plugin', async () => {
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server();
-    const insecureCreds = grpc.ServerCredentials.createInsecure();
-    createInsecureMock.mockReturnValue(insecureCreds);
-    expect(srv.credentials(true)).toEqual(insecureCreds);
+  //it('creates insecure credentials for plugin', async () => {
+  //  const srv = new Server();
+  //  const insecureCreds = grpc.ServerCredentials.createInsecure();
+  //  createInsecureMock.mockReturnValue(insecureCreds);
+  //  expect(srv.credentials(true)).toEqual(insecureCreds);
+  //});
+  //it('creates insecure if certs not defined', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  const srv = new Server();
+  //  const insecureCreds = grpc.ServerCredentials.createInsecure();
+  //  createInsecureMock.mockReturnValue(insecureCreds);
+  //  expect(srv.credentials(false)).toEqual(insecureCreds);
+  //});
+  //it('throws bad certs', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  const srv = new Server({ rootCerts: 'root.crt' });
+  //  expect(() => {
+  //    srv.credentials(false);
+  //  }).toThrow();
+  //});
+  //it('creates secure credentials with certs', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  mockReadFileSync = true;
+  //  mockedReadFileSync.mockImplementation((v) => Buffer.from(v + 'data'));
+  //  createSslMock.mockReturnValue('mock');
+  //  new Server({
+  //    rootCerts: 'root.crt',
+  //    privateKey: 'key.crt',
+  //    certChain: 'cert.crt',
+  //  }).credentials(false);
+  //  expect(createSslMock).toHaveBeenCalledWith(
+  //    Buffer.from('root.crtdata'),
+  //    [
+  //      {
+  //        cert_chain: Buffer.from('cert.crtdata'),
+  //        private_key: Buffer.from('key.crtdata'),
+  //      },
+  //    ],
+  //    undefined,
+  //  );
+  //  mockReadFileSync = false;
+  //});
+  //it('serves on default addresss as plugin', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  const insecureCreds = realCreateInsecure();
+  //  createInsecureMock.mockReset();
+  //  createInsecureMock.mockReturnValue(insecureCreds);
+  //  const srv = new Server();
+  //  const logSpy = jest.spyOn(global.console, 'log');
+  //  grpcServerMock.bindAsync.mockImplementation(((_1, _2, cb: (a: null, b: number) => void) => {
+  //    cb(null, 1234);
+  //  }) as (...args: unknown[]) => unknown);
+  //  await srv.serve();
+  //  expect(logSpy).toHaveBeenCalledWith('1|1|tcp|127.0.0.1:1234|grpc');
+  //  logSpy.mockClear();
+  //});
+  //it('serves on default addresss', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  const insecureCreds = realCreateInsecure();
+  //  createInsecureMock.mockReset();
+  //  createInsecureMock.mockReturnValue(insecureCreds);
+  //  createInsecureMock.mockReturnValue(insecureCreds);
+  //  const srv = new Server({ pluginMode: false });
+  //  const logSpy = jest.spyOn(global.console, 'log');
+  //  grpcServerMock.bindAsync.mockImplementation(((_1, _2, cb: (a: null, b: number) => void) => {
+  //    cb(null, 1234);
+  //  }) as (...args: unknown[]) => unknown);
+  //  await srv.serve();
+  //  expect(logSpy).not.toHaveBeenCalledWith('1|1|tcp|127.0.0.1:1234|grpc');
+  //});
+  //it('gracefully shutdowns', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  grpcServerMock.tryShutdown.mockImplementation(((f: () => void) => f()) as (...args: unknown[]) => unknown);
+  //  const srv = new Server();
+  //  await srv.stop();
+  //  expect(grpcServerMock.tryShutdown).toHaveBeenCalled();
+  //});
+  //it('supports profiling enabling', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
+  //  mockedDriverHandlers.fieldResolve.mockResolvedValue(new driverPb.FieldResolveResponse());
+  //  const profilerMock = {
+  //    start: jest.fn(),
+  //    report: jest.fn(),
+  //  };
+  //  let wrappedFieldResolve: (...args: unknown[]) => void;
+  //  grpcServerMock.addService.mockImplementation(
+  //    ((_: unknown, services: { fieldResolve: (...args: unknown[]) => void }) => {
+  //      wrappedFieldResolve = services.fieldResolve;
+  //    }) as (...args: unknown[]) => unknown,
+  //  );
+  //  mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
+  //  profilerMock.report.mockReturnValue('mocked report');
+  //  new Server({ enableProfiling: true });
+  //  const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<
+  //    messages.FieldResolveRequest,
+  //    messages.FieldResolveResponse
+  //  >;
+  //  const errorSpy = jest.spyOn(global.console, 'error');
+  //  await new Promise<void>((resolved) => {
+  //    const cb = jest.fn();
+  //    cb.mockImplementation(() => {
+  //      resolved();
+  //    });
+  //    wrappedFieldResolve(call, cb);
+  //  });
+  //  expect(mockedProfiler.Profiler).toHaveBeenCalledWith({ enabled: true });
+  //  expect(profilerMock.start).toHaveBeenCalled();
+  //  expect(profilerMock.report).toHaveBeenCalled();
+  //  expect(errorSpy).toHaveBeenCalledWith('mocked report');
+  //  errorSpy.mockClear();
+  //});
+  //it('supports profiling disabling', async () => {
+  //  const { Server } = await import('../../src/server/server.js');
+  //  mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
+  //  mockedDriverHandlers.fieldResolve.mockResolvedValue(new driverPb.FieldResolveResponse());
+  //  const profilerMock = {
+  //    start: jest.fn(),
+  //    report: jest.fn(),
+  //  };
+  //  let wrappedFieldResolve: (...args: unknown[]) => void;
+  //  grpcServerMock.addService.mockImplementation(
+  //    ((_: unknown, services: { fieldResolve: (...args: unknown[]) => void }) => {
+  //      wrappedFieldResolve = services.fieldResolve;
+  //    }) as (...args: unknown[]) => unknown,
+  //  );
+  //  mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
+  //  profilerMock.report.mockReturnValue('');
+  //  new Server();
+  //  const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<
+  //    messages.FieldResolveRequest,
+  //    messages.FieldResolveResponse
+  //  >;
+  //  const errorSpy = jest.spyOn(global.console, 'error');
+  //  await new Promise<void>((resolved) => {
+  //    const cb = jest.fn();
+  //    cb.mockImplementation(() => {
+  //      resolved();
+  //    });
+  //    wrappedFieldResolve(call, cb);
+  //  });
+  //  expect(mockedProfiler.Profiler).toHaveBeenCalledWith({ enabled: false });
+  //  expect(profilerMock.start).toHaveBeenCalled();
+  //  expect(profilerMock.report).toHaveBeenCalled();
+  //  expect(errorSpy).not.toHaveBeenCalledWith('mocked report');
+  //  errorSpy.mockClear();
+  //});
+});
+describe('tests function executors', () => {
+  const cwd = process.cwd();
+  beforeEach(() => {
+    process.chdir(join(cwd, 'tests', 'server', 'testdata'));
   });
-  it('creates insecure if certs not defined', async () => {
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server();
-    const insecureCreds = grpc.ServerCredentials.createInsecure();
-    createInsecureMock.mockReturnValue(insecureCreds);
-    expect(srv.credentials(false)).toEqual(insecureCreds);
+  afterEach(() => {
+    process.chdir(cwd);
   });
-  it('throws bad certs', async () => {
-    const { Server } = await import('../../src/server/server');
-    const srv = new Server({ rootCerts: 'root.crt' });
-    expect(() => {
-      srv.credentials(false);
-    }).toThrow();
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
+  const addService = (_: unknown, callbacks: Record<string, (...args: unknown[]) => unknown>) => {
+    handlers = callbacks
+  }
+  const execute = <T>(name: string, call: unknown): Promise<T> => new Promise<T>((resolve, reject) =>
+    handlers[name](call, (err: unknown, resp: unknown) => err ? reject(err) : resolve(resp as T))
+  );
+  new Server({ server: { addService } as GRPCServer });
+  it('calls field resolve handler', async () => {
+    const func = new messages.Function();
+    func.setName('field_resolve_handler')
+    const request = new messages.FieldResolveRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.FieldResolveInfo());
+    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
+    const resp = await execute<messages.FieldResolveResponse>('fieldResolve', call);
+    expect(resp.getResponse()?.getI()).toEqual(1);
   });
-  it('creates secure credentials with certs', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockReadFileSync = true;
-    mockedReadFileSync.mockImplementation((v) => Buffer.from(v + 'data'));
-    createSslMock.mockReturnValue('mock');
-    new Server({
-      rootCerts: 'root.crt',
-      privateKey: 'key.crt',
-      certChain: 'cert.crt',
-    }).credentials(false);
-    expect(createSslMock).toHaveBeenCalledWith(
-      Buffer.from('root.crtdata'),
-      [
-        {
-          cert_chain: Buffer.from('cert.crtdata'),
-          private_key: Buffer.from('key.crtdata'),
-        },
-      ],
-      undefined,
+  it('catches field resolve import error ', async () => {
+    const func = new messages.Function();
+    func.setName('missing')
+    const request = new messages.FieldResolveRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.FieldResolveInfo());
+    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
+    const resp = await execute<messages.FieldResolveResponse>('fieldResolve', call);
+    expect(resp.getError()?.getMsg()).toBeTruthy();
+  });
+  it('catches field resolve user error ', async () => {
+    const func = new messages.Function();
+    func.setName('user_error')
+    const request = new messages.FieldResolveRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.FieldResolveInfo());
+    const call = { request } as ServerUnaryCall<messages.FieldResolveRequest, messages.FieldResolveResponse>;
+    const resp = await execute<messages.FieldResolveResponse>('fieldResolve', call);
+    expect(resp.getError()?.getMsg()).toEqual('some error');
+  });
+  it('calls interface resolve type handler', async () => {
+    const func = new messages.Function();
+    func.setName('interface_resolve_type_handler')
+    const request = new messages.InterfaceResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.InterfaceResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
+    expect(resp.getType()?.getName()).toEqual('SomeType');
+  });
+  it('catches interface resolve type import error ', async () => {
+    const func = new messages.Function();
+    func.setName('missing')
+    const request = new messages.InterfaceResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.InterfaceResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
+    expect(resp.getError()?.getMsg()).toBeTruthy();
+  });
+  it('catches interface resolve type user error ', async () => {
+    const func = new messages.Function();
+    func.setName('user_error')
+    const request = new messages.InterfaceResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.InterfaceResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
+    expect(resp.getError()?.getMsg()).toEqual('some error');
+  });
+  it('sets environment variables for secrets', async () => {
+    const secrets: Array<[string, string]> = [['SECRET', 'VALUE']];
+    const request = new messages.SetSecretsRequest();
+    request.setSecretsList(
+      secrets.map((secret) => {
+        const protoSecret = new messages.Secret();
+        protoSecret.setKey(secret[0]);
+        protoSecret.setValue(secret[0]);
+        return protoSecret;
+      }),
     );
-    mockReadFileSync = false;
+    const call = { request } as ServerUnaryCall<messages.SetSecretsRequest, messages.SetSecretsResponse>;
+    const resp = await execute<messages.SetSecretsResponse>('setSecrets', call);
+    expect(resp.getError()).toBeUndefined();
   });
-  it('serves on default addresss as plugin', async () => {
-    const { Server } = await import('../../src/server/server');
-    const insecureCreds = realCreateInsecure();
-    createInsecureMock.mockReset();
-    createInsecureMock.mockReturnValue(insecureCreds);
-    const srv = new Server();
-    const logSpy = jest.spyOn(global.console, 'log');
-    grpcServerMock.bindAsync.mockImplementation((_1, _2, cb) => {
-      cb(null, 1234);
-    });
-    await srv.serve();
-    expect(logSpy).toHaveBeenCalledWith('1|1|tcp|127.0.0.1:1234|grpc');
-    logSpy.mockClear();
+  it('calls scalar parse type handler', async () => {
+    const func = new messages.Function();
+    func.setName('scalar_parse_handler')
+    const request = new messages.ScalarParseRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
+    const resp = await execute<messages.ScalarParseResponse>('scalarParse', call);
+    expect(resp.getValue()?.getI()).toEqual(1);
   });
-  it('serves on default addresss', async () => {
-    const { Server } = await import('../../src/server/server');
-    const insecureCreds = realCreateInsecure();
-    createInsecureMock.mockReset();
-    createInsecureMock.mockReturnValue(insecureCreds);
-    createInsecureMock.mockReturnValue(insecureCreds);
-    const srv = new Server({ pluginMode: false });
-    const logSpy = jest.spyOn(global.console, 'log');
-    grpcServerMock.bindAsync.mockImplementation((_1, _2, cb) => {
-      cb(null, 1234);
-    });
-    await srv.serve();
-    expect(logSpy).not.toHaveBeenCalledWith('1|1|tcp|127.0.0.1:1234|grpc');
+  it('catches scalar parse type import error ', async () => {
+    const func = new messages.Function();
+    func.setName('missing')
+    const request = new messages.ScalarParseRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
+    const resp = await execute<messages.ScalarParseResponse>('scalarParse', call);
+    expect(resp.getError()?.getMsg()).toBeTruthy();
   });
-  it('gracefully shutdowns', async () => {
-    const { Server } = await import('../../src/server/server');
-    grpcServerMock.tryShutdown.mockImplementation((f) => f());
-    const srv = new Server();
-    await srv.stop();
-    expect(grpcServerMock.tryShutdown).toHaveBeenCalled();
+  it('catches scalar parse type user error ', async () => {
+    const func = new messages.Function();
+    func.setName('user_error')
+    const request = new messages.ScalarParseRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
+    const resp = await execute<messages.ScalarParseResponse>('scalarParse', call);
+    expect(resp.getError()?.getMsg()).toEqual('some error');
   });
-  it('supports profiling enabling', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.fieldResolve.mockResolvedValue(new driverPb.FieldResolveResponse());
-    const profilerMock = {
-      start: jest.fn(),
-      report: jest.fn(),
-    };
-    let wrappedFieldResolve: (...args: unknown[]) => void;
-    grpcServerMock.addService.mockImplementation(
-      (_: unknown, services: { fieldResolve: (...args: unknown[]) => void }) => {
-        wrappedFieldResolve = services.fieldResolve;
-      },
-    );
-    mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
-    profilerMock.report.mockReturnValue('mocked report');
-    new Server({ enableProfiling: true });
-    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<
-      messages.FieldResolveRequest,
-      messages.FieldResolveResponse
-    >;
-    const errorSpy = jest.spyOn(global.console, 'error');
-    await new Promise<void>((resolved) => {
-      const cb = jest.fn();
-      cb.mockImplementation(() => {
-        resolved();
-      });
-      wrappedFieldResolve(call, cb);
-    });
-    expect(mockedProfiler.Profiler).toHaveBeenCalledWith({ enabled: true });
-    expect(profilerMock.start).toHaveBeenCalled();
-    expect(profilerMock.report).toHaveBeenCalled();
-    expect(errorSpy).toHaveBeenCalledWith('mocked report');
-    errorSpy.mockClear();
+  it('calls scalar serialize type handler', async () => {
+    const func = new messages.Function();
+    func.setName('scalar_serialize_handler')
+    const request = new messages.ScalarSerializeRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
+    const resp = await execute<messages.ScalarSerializeResponse>('scalarSerialize', call);
+    expect(resp.getValue()?.getI()).toEqual(1);
   });
-  it('supports profiling disabling', async () => {
-    const { Server } = await import('../../src/server/server');
-    mockHandlerModule.getHandler.mockResolvedValue(jest.fn());
-    mockedDriverHandlers.fieldResolve.mockResolvedValue(new driverPb.FieldResolveResponse());
-    const profilerMock = {
-      start: jest.fn(),
-      report: jest.fn(),
-    };
-    let wrappedFieldResolve: (...args: unknown[]) => void;
-    grpcServerMock.addService.mockImplementation(
-      (_: unknown, services: { fieldResolve: (...args: unknown[]) => void }) => {
-        wrappedFieldResolve = services.fieldResolve;
-      },
-    );
-    mockedProfiler.Profiler.mockImplementation(() => profilerMock as unknown as Profiler);
-    profilerMock.report.mockReturnValue('');
-    new Server();
-    const call = { request: new driverPb.FieldResolveRequest() } as ServerUnaryCall<
-      messages.FieldResolveRequest,
-      messages.FieldResolveResponse
-    >;
-    const errorSpy = jest.spyOn(global.console, 'error');
-    await new Promise<void>((resolved) => {
-      const cb = jest.fn();
-      cb.mockImplementation(() => {
-        resolved();
-      });
-      wrappedFieldResolve(call, cb);
-    });
-    expect(mockedProfiler.Profiler).toHaveBeenCalledWith({ enabled: false });
-    expect(profilerMock.start).toHaveBeenCalled();
-    expect(profilerMock.report).toHaveBeenCalled();
-    expect(errorSpy).not.toHaveBeenCalledWith('mocked report');
-    errorSpy.mockClear();
+  it('catches scalar serialize type import error ', async () => {
+    const func = new messages.Function();
+    func.setName('missing')
+    const request = new messages.ScalarSerializeRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
+    const resp = await execute<messages.ScalarSerializeResponse>('scalarSerialize', call);
+    expect(resp.getError()?.getMsg()).toBeTruthy();
+  });
+  it('catches scalar serialize type user error ', async () => {
+    const func = new messages.Function();
+    func.setName('user_error')
+    const request = new messages.ScalarSerializeRequest();
+    request.setFunction(func);
+    const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
+    const resp = await execute<messages.ScalarSerializeResponse>('scalarSerialize', call);
+    expect(resp.getError()?.getMsg()).toEqual('some error');
+  });
+  it('calls union resolve type handler', async () => {
+    const func = new messages.Function();
+    func.setName('union_resolve_type_handler')
+    const request = new messages.UnionResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.UnionResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
+    const resp = await execute<messages.UnionResolveTypeResponse>('unionResolveType', call);
+    expect(resp.getType()?.getName()).toEqual('SomeType');
+  });
+  it('catches union resolve type import error ', async () => {
+    const func = new messages.Function();
+    func.setName('missing')
+    const request = new messages.UnionResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.UnionResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
+    const resp = await execute<messages.UnionResolveTypeResponse>('unionResolveType', call);
+    expect(resp.getError()?.getMsg()).toBeTruthy();
+  });
+  it('catches union resolve type user error ', async () => {
+    const func = new messages.Function();
+    func.setName('user_error')
+    const request = new messages.UnionResolveTypeRequest();
+    request.setFunction(func);
+    request.setInfo(new messages.UnionResolveTypeInfo());
+    const call = { request } as ServerUnaryCall<messages.UnionResolveTypeRequest, messages.UnionResolveTypeResponse>;
+    const resp = await execute<messages.UnionResolveTypeResponse>('unionResolveType', call);
+    expect(resp.getError()?.getMsg()).toEqual('some error');
   });
 });

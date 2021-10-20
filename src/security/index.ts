@@ -1,6 +1,6 @@
 import { IncomingMessage } from 'http';
-import { HttpCertReader, ClientCertAuth } from './cert';
-import { ApiKeyAuth } from './apiKey';
+import { HttpCertReader, ClientCertAuth } from './cert.js';
+import { ApiKeyAuth } from './apiKey.js';
 
 interface Auth {
   authorize(req: IncomingMessage): Promise<boolean>;
@@ -31,5 +31,5 @@ export function DefaultSecurity(secRequired = false): MultiAuth | void {
   return new MultiAuth(authHandlers);
 }
 
-export { ClientCertAuth, HttpCertReader, createPEM } from './cert';
-export { ApiKeyAuth } from './apiKey';
+export { ClientCertAuth, HttpCertReader, createPEM } from './cert.js';
+export { ApiKeyAuth } from './apiKey.js';

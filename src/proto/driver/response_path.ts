@@ -1,6 +1,6 @@
-import { ResponsePath as APIResponsePath } from '../../api';
-import { messages } from 'stucco-ts-proto-gen';
-import { getFromValue } from './value';
+import { ResponsePath as APIResponsePath } from '../../api/index.js';
+import * as messages from './messages.js';
+import { getFromValue } from './value.js';
 
 export const buildResponsePath = (rp: messages.ResponsePath | undefined): APIResponsePath | undefined =>
   rp && {

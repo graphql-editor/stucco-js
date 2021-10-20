@@ -1,5 +1,5 @@
-import { messages } from 'stucco-ts-proto-gen';
-import { setSecretsHandler } from '../../src/raw/set_secrets';
+import * as messages from '../../src/proto/driver/messages.js';
+import { setSecretsHandler } from '../../src/raw/set_secrets.js';
 describe('raw setSecrets resolve type handler', () => {
   it('checks content type', async () => {
     const data: Array<{

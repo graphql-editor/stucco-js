@@ -1,3 +1,7 @@
+import { jest } from '@jest/globals';
+
+import { WriteStreamLike } from '../../src/server/hook_stream.js';
+
 describe('StreamHook', () => {
   beforeEach(() => {
     jest.resetModules();
@@ -9,16 +13,16 @@ describe('StreamHook', () => {
     const passthroughWrite = jest.fn();
     const passthroughEnd = jest.fn();
     const nodejsStreamMockWrite = jest.fn();
-    jest.mock('stream', () => {
+    jest.unstable_mockModule('stream', () => {
       class PassThrough {
         public write = passthroughWrite;
         public end = passthroughEnd;
       }
       return { PassThrough };
     });
-    const { StreamHook } = await import('../../src/server/hook_stream');
+    const { StreamHook } = await import('../../src/server/hook_stream.js');
     const stream = { write: nodejsStreamMockWrite };
-    const hook = new StreamHook(stream);
+    const hook = new StreamHook(stream as WriteStreamLike);
     expect(stream.write).not.toBe(nodejsStreamMockWrite);
     hook.delete();
     expect(stream.write).toBe(nodejsStreamMockWrite);
@@ -28,16 +32,16 @@ describe('StreamHook', () => {
     const passthroughWrite = jest.fn();
     const passthroughEnd = jest.fn();
     const nodejsStreamMockWrite = jest.fn();
-    jest.mock('stream', () => {
+    jest.unstable_mockModule('stream', () => {
       class PassThrough {
         public write = passthroughWrite;
         public end = passthroughEnd;
       }
       return { PassThrough };
     });
-    const { StreamHook } = await import('../../src/server/hook_stream');
+    const { StreamHook } = await import('../../src/server/hook_stream.js');
     const stream = { write: nodejsStreamMockWrite };
-    const hook = new StreamHook(stream);
+    const hook = new StreamHook(stream as WriteStreamLike);
     stream.write('unhooked');
     expect(nodejsStreamMockWrite).toHaveBeenLastCalledWith('unhooked');
     hook.hook();
