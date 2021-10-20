@@ -358,12 +358,14 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses formed response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve({
-        response: 'mocked response',
-        error: {
-          message: 'mocked error',
-        },
-      }));
+      handler.mockImplementation(() =>
+        Promise.resolve({
+          response: 'mocked response',
+          error: {
+            message: 'mocked error',
+          },
+        }),
+      );
       const request = new messages.FieldResolveRequest();
       request.setInfo(new messages.FieldResolveInfo());
       const response = await fieldResolve(request, asHandler(handler));
@@ -376,7 +378,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses any response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(('data')));
+      handler.mockImplementation(() => Promise.resolve('data'));
       const request = new messages.FieldResolveRequest();
       request.setInfo(new messages.FieldResolveInfo());
       const response = await fieldResolve(request, asHandler(handler));
@@ -386,7 +388,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses undefined response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.FieldResolveRequest();
       request.setInfo(new messages.FieldResolveInfo());
       const response = await fieldResolve(request, asHandler(handler));
@@ -421,7 +423,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses input', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({})));
+      handler.mockImplementation(() => Promise.resolve({}));
       const expectedInput: InterfaceResolveTypeInput = {
         info: expectedInfo,
         value: 'some value',
@@ -434,12 +436,14 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses formed type response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({
-        type: 'MockedType',
-        error: {
-          message: 'mocked error',
-        },
-      })));
+      handler.mockImplementation(() =>
+        Promise.resolve({
+          type: 'MockedType',
+          error: {
+            message: 'mocked error',
+          },
+        }),
+      );
       const request = new messages.InterfaceResolveTypeRequest();
       request.setInfo(new messages.InterfaceResolveTypeInfo());
       const response = await interfaceResolveType(request, asHandler(handler));
@@ -454,7 +458,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses string type', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(('MockedType')));
+      handler.mockImplementation(() => Promise.resolve('MockedType'));
       const request = new messages.InterfaceResolveTypeRequest();
       request.setInfo(new messages.InterfaceResolveTypeInfo());
       const response = await interfaceResolveType(request, asHandler(handler));
@@ -466,7 +470,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('requires type', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.InterfaceResolveTypeRequest();
       request.setInfo(new messages.InterfaceResolveTypeInfo());
       const response = await interfaceResolveType(request, asHandler(handler));
@@ -501,7 +505,7 @@ describe('protocol buffer-javascript bridge', () => {
       secret.setKey('SECRET');
       secret.setValue('value');
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.SetSecretsRequest();
       request.setSecretsList([secret]);
       const response = await setSecrets(request, asHandler(handler));
@@ -526,7 +530,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses input', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({})));
+      handler.mockImplementation(() => Promise.resolve({}));
       const expectedInput: ScalarParseInput = {
         value: 'some value',
       };
@@ -537,12 +541,14 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses formed value response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({
-        response: 'mocked value',
-        error: {
-          message: 'mocked error',
-        },
-      })));
+      handler.mockImplementation(() =>
+        Promise.resolve({
+          response: 'mocked value',
+          error: {
+            message: 'mocked error',
+          },
+        }),
+      );
       const request = new messages.ScalarParseRequest();
       const response = await scalarParse(request, asHandler(handler));
       const expectedResposne = new messages.ScalarParseResponse();
@@ -554,7 +560,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses any value', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(('mocked value')));
+      handler.mockImplementation(() => Promise.resolve('mocked value'));
       const request = new messages.ScalarParseRequest();
       const response = await scalarParse(request, asHandler(handler));
       const expectedResposne = new messages.ScalarParseResponse();
@@ -563,7 +569,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses undefined value', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.ScalarParseRequest();
       const response = await scalarParse(request, asHandler(handler));
       const expectedResposne = new messages.ScalarParseResponse();
@@ -587,7 +593,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses input', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({})));
+      handler.mockImplementation(() => Promise.resolve({}));
       const expectedInput: ScalarSerializeInput = {
         value: 'some value',
       };
@@ -598,12 +604,14 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses formed value response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({
-        response: 'mocked value',
-        error: {
-          message: 'mocked error',
-        },
-      })));
+      handler.mockImplementation(() =>
+        Promise.resolve({
+          response: 'mocked value',
+          error: {
+            message: 'mocked error',
+          },
+        }),
+      );
       const request = new messages.ScalarSerializeRequest();
       const response = await scalarSerialize(request, asHandler(handler));
       const expectedResposne = new messages.ScalarSerializeResponse();
@@ -615,7 +623,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses any value', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(('mocked value')));
+      handler.mockImplementation(() => Promise.resolve('mocked value'));
       const request = new messages.ScalarSerializeRequest();
       const response = await scalarSerialize(request, asHandler(handler));
       const expectedResposne = new messages.ScalarSerializeResponse();
@@ -624,7 +632,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses undefined value', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.ScalarSerializeRequest();
       const response = await scalarSerialize(request, asHandler(handler));
       const expectedResposne = new messages.ScalarSerializeResponse();
@@ -658,7 +666,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses input', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({})));
+      handler.mockImplementation(() => Promise.resolve({}));
       const expectedInput: UnionResolveTypeInput = {
         info: expectedInfo,
         value: 'some value',
@@ -671,12 +679,14 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses formed type response', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(({
-        type: 'MockedType',
-        error: {
-          message: 'mocked error',
-        },
-      })));
+      handler.mockImplementation(() =>
+        Promise.resolve({
+          type: 'MockedType',
+          error: {
+            message: 'mocked error',
+          },
+        }),
+      );
       const request = new messages.UnionResolveTypeRequest();
       request.setInfo(new messages.UnionResolveTypeInfo());
       const response = await unionResolveType(request, asHandler(handler));
@@ -691,7 +701,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('parses string type', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve(('MockedType')));
+      handler.mockImplementation(() => Promise.resolve('MockedType'));
       const request = new messages.UnionResolveTypeRequest();
       request.setInfo(new messages.UnionResolveTypeInfo());
       const response = await unionResolveType(request, asHandler(handler));
@@ -703,7 +713,7 @@ describe('protocol buffer-javascript bridge', () => {
     });
     it('requires type', async () => {
       const handler = jest.fn();
-      handler.mockImplementation(() => Promise.resolve((undefined)));
+      handler.mockImplementation(() => Promise.resolve(undefined));
       const request = new messages.UnionResolveTypeRequest();
       request.setInfo(new messages.UnionResolveTypeInfo());
       const response = await unionResolveType(request, asHandler(handler));

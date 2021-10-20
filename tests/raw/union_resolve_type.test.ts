@@ -1,5 +1,3 @@
-import { jest } from '@jest/globals';
-import { getHandler } from '../../src/handler/index.js';
 import { join } from 'path';
 
 import * as messages from '../../src/proto/driver/messages.js';

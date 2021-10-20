@@ -1,5 +1,3 @@
-import { jest } from '@jest/globals';
-
 import * as messages from '../../src/proto/driver/messages.js';
 import { interfaceResolveTypeHandler } from '../../src/raw/interface_resolve_type.js';
 import { join } from 'path';

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import * as messages from '../../src/proto/driver/messages';
 import { fieldResolveHandler } from '../../src/raw/field_resolve.js';
 import { join } from 'path';

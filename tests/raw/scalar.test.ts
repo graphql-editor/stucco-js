@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import * as messages from '../../src/proto/driver/messages';
 import { scalarParseHandler, scalarSerializeHandler } from '../../src/raw/scalar.js';
 import { join } from 'path';

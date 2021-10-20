@@ -70,16 +70,14 @@ describe('grpc server', () => {
     };
     const fakeStdout = jest.fn();
     let stdout: (call: Writable) => void = fakeStdout;
-    const addService = jest.fn().mockImplementation((
-      (
-        _: unknown,
-        services: {
-          stdout: (call: Writable) => void;
-        },
-      ) => {
-        stdout = services.stdout;
-      }) as (...args: unknown[]) => unknown,
-    );
+    const addService = jest.fn().mockImplementation(((
+      _: unknown,
+      services: {
+        stdout: (call: Writable) => void;
+      },
+    ) => {
+      stdout = services.stdout;
+    }) as (...args: unknown[]) => unknown);
     new Server({
       stdoutHook: hook,
       server: { addService } as unknown as GRPCServer,
@@ -126,16 +124,14 @@ describe('grpc server', () => {
     };
     const fakeStderr = jest.fn();
     let stderr: (call: Writable) => void = fakeStderr;
-    const addService = jest.fn().mockImplementation(
-      ((
-        _: unknown,
-        services: {
-          stderr: (call: Writable) => void;
-        },
-      ): void => {
-        stderr = services.stderr;
-      }) as (...args: unknown[]) => unknown,
-    );
+    const addService = jest.fn().mockImplementation(((
+      _: unknown,
+      services: {
+        stderr: (call: Writable) => void;
+      },
+    ): void => {
+      stderr = services.stderr;
+    }) as (...args: unknown[]) => unknown);
     new Server({
       stderrHook: hook,
       server: { addService } as unknown as GRPCServer,
@@ -331,15 +327,16 @@ describe('tests function executors', () => {
   });
   let handlers: Record<string, (...args: unknown[]) => unknown> = {};
   const addService = (_: unknown, callbacks: Record<string, (...args: unknown[]) => unknown>) => {
-    handlers = callbacks
-  }
-  const execute = <T>(name: string, call: unknown): Promise<T> => new Promise<T>((resolve, reject) =>
-    handlers[name](call, (err: unknown, resp: unknown) => err ? reject(err) : resolve(resp as T))
-  );
+    handlers = callbacks;
+  };
+  const execute = <T>(name: string, call: unknown): Promise<T> =>
+    new Promise<T>((resolve, reject) =>
+      handlers[name](call, (err: unknown, resp: unknown) => (err ? reject(err) : resolve(resp as T))),
+    );
   new Server({ server: { addService } as GRPCServer });
   it('calls field resolve handler', async () => {
     const func = new messages.Function();
-    func.setName('field_resolve_handler')
+    func.setName('field_resolve_handler');
     const request = new messages.FieldResolveRequest();
     request.setFunction(func);
     request.setInfo(new messages.FieldResolveInfo());
@@ -349,7 +346,7 @@ describe('tests function executors', () => {
   });
   it('catches field resolve import error ', async () => {
     const func = new messages.Function();
-    func.setName('missing')
+    func.setName('missing');
     const request = new messages.FieldResolveRequest();
     request.setFunction(func);
     request.setInfo(new messages.FieldResolveInfo());
@@ -359,7 +356,7 @@ describe('tests function executors', () => {
   });
   it('catches field resolve user error ', async () => {
     const func = new messages.Function();
-    func.setName('user_error')
+    func.setName('user_error');
     const request = new messages.FieldResolveRequest();
     request.setFunction(func);
     request.setInfo(new messages.FieldResolveInfo());
@@ -369,31 +366,40 @@ describe('tests function executors', () => {
   });
   it('calls interface resolve type handler', async () => {
     const func = new messages.Function();
-    func.setName('interface_resolve_type_handler')
+    func.setName('interface_resolve_type_handler');
     const request = new messages.InterfaceResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.InterfaceResolveTypeInfo());
-    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const call = { request } as ServerUnaryCall<
+      messages.InterfaceResolveTypeRequest,
+      messages.InterfaceResolveTypeResponse
+    >;
     const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
     expect(resp.getType()?.getName()).toEqual('SomeType');
   });
   it('catches interface resolve type import error ', async () => {
     const func = new messages.Function();
-    func.setName('missing')
+    func.setName('missing');
     const request = new messages.InterfaceResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.InterfaceResolveTypeInfo());
-    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const call = { request } as ServerUnaryCall<
+      messages.InterfaceResolveTypeRequest,
+      messages.InterfaceResolveTypeResponse
+    >;
     const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
     expect(resp.getError()?.getMsg()).toBeTruthy();
   });
   it('catches interface resolve type user error ', async () => {
     const func = new messages.Function();
-    func.setName('user_error')
+    func.setName('user_error');
     const request = new messages.InterfaceResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.InterfaceResolveTypeInfo());
-    const call = { request } as ServerUnaryCall<messages.InterfaceResolveTypeRequest, messages.InterfaceResolveTypeResponse>;
+    const call = { request } as ServerUnaryCall<
+      messages.InterfaceResolveTypeRequest,
+      messages.InterfaceResolveTypeResponse
+    >;
     const resp = await execute<messages.InterfaceResolveTypeResponse>('interfaceResolveType', call);
     expect(resp.getError()?.getMsg()).toEqual('some error');
   });
@@ -414,7 +420,7 @@ describe('tests function executors', () => {
   });
   it('calls scalar parse type handler', async () => {
     const func = new messages.Function();
-    func.setName('scalar_parse_handler')
+    func.setName('scalar_parse_handler');
     const request = new messages.ScalarParseRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
@@ -423,7 +429,7 @@ describe('tests function executors', () => {
   });
   it('catches scalar parse type import error ', async () => {
     const func = new messages.Function();
-    func.setName('missing')
+    func.setName('missing');
     const request = new messages.ScalarParseRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
@@ -432,7 +438,7 @@ describe('tests function executors', () => {
   });
   it('catches scalar parse type user error ', async () => {
     const func = new messages.Function();
-    func.setName('user_error')
+    func.setName('user_error');
     const request = new messages.ScalarParseRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarParseRequest, messages.ScalarParseResponse>;
@@ -441,7 +447,7 @@ describe('tests function executors', () => {
   });
   it('calls scalar serialize type handler', async () => {
     const func = new messages.Function();
-    func.setName('scalar_serialize_handler')
+    func.setName('scalar_serialize_handler');
     const request = new messages.ScalarSerializeRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
@@ -450,7 +456,7 @@ describe('tests function executors', () => {
   });
   it('catches scalar serialize type import error ', async () => {
     const func = new messages.Function();
-    func.setName('missing')
+    func.setName('missing');
     const request = new messages.ScalarSerializeRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
@@ -459,7 +465,7 @@ describe('tests function executors', () => {
   });
   it('catches scalar serialize type user error ', async () => {
     const func = new messages.Function();
-    func.setName('user_error')
+    func.setName('user_error');
     const request = new messages.ScalarSerializeRequest();
     request.setFunction(func);
     const call = { request } as ServerUnaryCall<messages.ScalarSerializeRequest, messages.ScalarSerializeResponse>;
@@ -468,7 +474,7 @@ describe('tests function executors', () => {
   });
   it('calls union resolve type handler', async () => {
     const func = new messages.Function();
-    func.setName('union_resolve_type_handler')
+    func.setName('union_resolve_type_handler');
     const request = new messages.UnionResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.UnionResolveTypeInfo());
@@ -478,7 +484,7 @@ describe('tests function executors', () => {
   });
   it('catches union resolve type import error ', async () => {
     const func = new messages.Function();
-    func.setName('missing')
+    func.setName('missing');
     const request = new messages.UnionResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.UnionResolveTypeInfo());
@@ -488,7 +494,7 @@ describe('tests function executors', () => {
   });
   it('catches union resolve type user error ', async () => {
     const func = new messages.Function();
-    func.setName('user_error')
+    func.setName('user_error');
     const request = new messages.UnionResolveTypeRequest();
     request.setFunction(func);
     request.setInfo(new messages.UnionResolveTypeInfo());

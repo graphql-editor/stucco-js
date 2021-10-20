@@ -1,4 +1,7 @@
-import { VariableDefinition as APIVariableDefinition, VariableDefinitions as APIVariableDefinitions } from '../../api/index.js';
+import {
+  VariableDefinition as APIVariableDefinition,
+  VariableDefinitions as APIVariableDefinitions,
+} from '../../api/index.js';
 import * as messages from './messages.js';
 import { getFromValue } from './value.js';
 import { notUndefined } from '../../util/util.js';

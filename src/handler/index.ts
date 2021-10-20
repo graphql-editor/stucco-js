@@ -64,7 +64,7 @@ export async function getHandler<T, U, V = undefined>(
   const baseExt = extname(fnName);
   const fName = baseExt === '' ? await findExt(fnName) : baseExt;
   const ext = fName.match(/^\.[mc]?js/) ? fName : await findExt(fnName.slice(0, -fName.length));
-  const importPath = (baseExt.length ? fnName.slice(0, -baseExt.length) : fnName) + ext
+  const importPath = (baseExt.length ? fnName.slice(0, -baseExt.length) : fnName) + ext;
   const mod = await import(importPath);
   const handler = handlerFunc<T, U, V>(fName === ext ? '' : fName.slice(1), mod);
   const wrapHandler = (x: T, y?: V): Promise<U> => Promise.resolve(handler(x, y));

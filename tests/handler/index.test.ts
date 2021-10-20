@@ -31,27 +31,27 @@ describe('handler', () => {
     await expect(getHandler(mockWithFunction(''))).rejects.toHaveProperty('message');
   });
   it('imports commonjs default export', async () => {
-    const v = (await getHandler(mockWithFunction('commonjs_default')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('commonjs_default'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports commonjs handler export if name empty', async () => {
-    const v = (await getHandler(mockWithFunction('commonjs_handler')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('commonjs_handler'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports commonjs named function', async () => {
-    const v = (await getHandler(mockWithFunction('commonjs_named.fnname')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('commonjs_named.fnname'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports es module default function', async () => {
-    const v = (await getHandler(mockWithFunction('esm_default')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('esm_default'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports es handler export if name empty', async () => {
-    const v = (await getHandler(mockWithFunction('esm_handler')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('esm_handler'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports es named function', async () => {
-    const v = (await getHandler(mockWithFunction('esm_named.fnname')) as (arg: unknown) => unknown)(1);
+    const v = ((await getHandler(mockWithFunction('esm_named.fnname'))) as (arg: unknown) => unknown)(1);
     expect(v).resolves.toEqual(1);
   });
   it('throws if function not defined', async () => {
