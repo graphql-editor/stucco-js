@@ -1,8 +1,11 @@
-import { extname } from 'path';
+import { extname, resolve } from 'path';
 import { promises } from 'fs';
+interface WithName {
+  getName: () => string;
+}
 export interface WithFunction {
   hasFunction(): boolean;
-  getFunction(): { getName: () => string } | undefined;
+  getFunction(): WithName | undefined;
 }
 
 function handlerFunc<T, U, V>(name: string, mod: { [k: string]: unknown }): (x: T, y?: V) => Promise<U> | U {
@@ -43,6 +46,10 @@ async function findExtFrom(fnName: string, ext: string[]): Promise<string> {
     .catch(() => findExtFrom(fnName, ext.slice(1)));
 }
 async function findExt(fnName: string): Promise<string> {
+  fnName = new URL(fnName).pathname;
+  if (process.platform === 'win32' && fnName.match(/^\/[a-zA-Z]:\/.*$/)) {
+    fnName = fnName.slice(1);
+  }
   return findExtFrom(fnName, ['.js', '.cjs', '.mjs']);
 }
 
@@ -56,14 +63,14 @@ export async function getHandler<T, U, V = undefined>(
   if (typeof fn === 'undefined' || !fn.getName()) {
     throw new Error(`function name is empty`);
   }
-  const fnName = `${process.cwd()}/${fn.getName()}`;
+  const fnName = `file:///${resolve(fn.getName())}`;
   const cached = cachedFunc<T, U, V>(fnName);
   if (cached) {
     return cached;
   }
   const baseExt = extname(fnName);
   const fName = baseExt === '' ? await findExt(fnName) : baseExt;
-  const ext = fName.match(/^\.[mc]?js/) ? fName : await findExt(fnName.slice(0, -fName.length));
+  const ext = fName.match(/^\.[mc]?js$/) ? fName : await findExt(fnName.slice(0, -fName.length));
   const importPath = (baseExt.length ? fnName.slice(0, -baseExt.length) : fnName) + ext;
   const mod = await import(importPath);
   const handler = handlerFunc<T, U, V>(fName === ext ? '' : fName.slice(1), mod);
