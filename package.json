@@ -28,7 +28,7 @@
     "lru-cache": "^6.0.0",
     "node-forge": "^0.10.0",
     "retry": "^0.13.1",
-    "stucco-ts-proto-gen": "^0.7.16",
+    "stucco-ts-proto-gen": "^0.7.18",
     "uuid": "^8.3.2",
     "yargs": "^17.2.1"
   },
@@ -60,6 +60,6 @@
     "prettier": "^2.4.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.0.7",
-    "typescript": "^4.5.0-beta"
+    "typescript": "^4.4.4"
   }
 }

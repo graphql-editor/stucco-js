@@ -1,4 +1,4 @@
-import * as driverService from 'stucco-ts-proto-gen/dist/ts/node/driver_service/service_grpc_pb.cjs';
+import { driverService } from 'stucco-ts-proto-gen';
 
 export type IDriverService = driverService.IDriverService;
 export type IDriverService_IFieldResolve = driverService.IDriverService_IFieldResolve;
