@@ -1,5 +1,5 @@
 import { setSecrets, makeProtoError } from '../proto/driver/index.js';
-import { messages } from 'stucco-ts-proto-gen';
+import { SetSecretsRequest, SetSecretsResponse } from '../proto/driver/messages.js';
 import { getMessageType, parseMIME, MessageType } from './message.js';
 import { SetSecretsOutput, SetSecretsInput } from '../api/index.js';
 
@@ -15,11 +15,11 @@ export async function setSecretsHandler(contentType: string, body: Uint8Array): 
     if (getMessageType(parseMIME(contentType)) !== MessageType.SET_SECRETS_REQUEST) {
       throw new Error(`"${contentType}" is not a valid content-type`);
     }
-    const request = messages.SetSecretsRequest.deserializeBinary(body);
+    const request = SetSecretsRequest.deserializeBinary(body);
     const response = await setSecrets(request, setSecretsEnvironment);
     return response.serializeBinary();
   } catch (e) {
-    const response = new messages.SetSecretsResponse();
+    const response = new SetSecretsResponse();
     response.setError(makeProtoError(e));
     return response.serializeBinary();
   }
