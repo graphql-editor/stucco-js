@@ -25,7 +25,7 @@ export async function handler<T extends WithFunction, U extends Serializable & W
   requestType: Deserializable<T>,
   responseType: Constructible<U>,
   body: Uint8Array,
-  fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
+  fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
 ): Promise<Uint8Array> {
   try {
     if (getMessageType(parseMIME(contentType)) !== msgType) {

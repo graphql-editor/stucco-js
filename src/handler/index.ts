@@ -26,17 +26,15 @@ const cache: {
   [k: string]: (arg1: unknown, arg2?: unknown) => unknown;
 } = {};
 
-function cachedFunc<T, U, V>(fnName: string): ((x: T, y?: V) => Promise<U | undefined>) | undefined {
+function cachedFunc<T, U, V>(fnName: string): ((x: T, y?: V) => Promise<U>) | undefined {
   const cached = cache[fnName];
   if (cached) {
-    return cached as (x: T, y?: V) => Promise<U | undefined>;
+    return cached as (x: T, y?: V) => Promise<U>;
   }
   return;
 }
 
-export async function getHandler<T, U, V = undefined>(
-  req: WithFunction,
-): Promise<(x: T, y?: V) => Promise<U | undefined>> {
+export async function getHandler<T, U, V = undefined>(req: WithFunction): Promise<(x: T, y?: V) => Promise<U>> {
   if (!req.hasFunction()) {
     throw new Error('missing function');
   }

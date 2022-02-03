@@ -212,6 +212,14 @@ export interface SubscriptionListenInput {
   operation?: OperationDefinition;
 }
 
+export interface AuthorizeInput {
+  query?: string;
+  variableValues?: Record<string, unknown>;
+  operationName?: string;
+  protocol?: Protocol;
+}
+export type AuthorizeOutput = boolean | { error: Error };
+
 export type FieldResolveHandler = (input: FieldResolveInput) => FieldResolveOutput;
 export type InterfaceResolveTypeHandler = (input: InterfaceResolveTypeInput) => InterfaceResolveTypeOutput;
 export type ScalarParseHandler = (input: ScalarParseInput) => ScalarParseOutput;
@@ -219,3 +227,5 @@ export type ScalarSerializeHandler = (input: ScalarSerializeInput) => ScalarSeri
 export type UnionResolveTypeHandler = (input: UnionResolveTypeInput) => UnionResolveTypeOutput;
 export type SubscriptionConnectionHandler = (input: SubscriptionConnectionInput) => SubscriptionConnectionOutput;
 export type SubscriptionListenHandler = (input: SubscriptionListenInput, emitter: SubscriptionListenEmitter) => void;
+
+export type AuthorizeHandler = (input: AuthorizeInput) => AuthorizeOutput;
