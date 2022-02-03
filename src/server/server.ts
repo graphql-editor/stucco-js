@@ -6,6 +6,7 @@ import { getHandler } from '../handler/index.js';
 import * as messages from '../proto/driver/messages.js';
 import * as driverService from '../proto/driver/driver_service.js';
 import {
+  authorize,
   fieldResolve,
   interfaceResolveType,
   makeProtoError,
@@ -105,6 +106,7 @@ export class Server {
     const grpcHealthCheck = new GrpcHealthCheck(healthCheckStatusMap);
     this.server.addService(HealthService, grpcHealthCheck.server);
     this.server.addService(driverService.DriverService, {
+      authorize: this.wrapUnaryCall(this, this.unaryCallHandler(messages.AuthorizeResponse, authorize)),
       fieldResolve: this.wrapUnaryCall(this, this.unaryCallHandler(messages.FieldResolveResponse, fieldResolve)),
       interfaceResolveType: this.wrapUnaryCall(
         this,
@@ -203,7 +205,7 @@ export class Server {
     responseCtor: {
       new (): U;
     },
-    fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
+    fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
   ): void {
     const f = async () => {
       try {
@@ -223,7 +225,7 @@ export class Server {
     responseCtor: {
       new (): U;
     },
-    fn: (req: T, handler: (x: V) => Promise<W | undefined>) => Promise<U>,
+    fn: (req: T, handler: (x: V) => Promise<W>) => Promise<U>,
   ): grpc.handleUnaryCall<T, U> {
     return (call: grpc.ServerUnaryCall<T, U>, callback: grpc.sendUnaryData<U>): void =>
       this.executeUserHandler(call, callback, responseCtor, fn);

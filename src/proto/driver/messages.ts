@@ -38,3 +38,5 @@ export class SubscriptionConnectionRequest extends messages.SubscriptionConnecti
 export class SubscriptionConnectionResponse extends messages.SubscriptionConnectionResponse {}
 export class SubscriptionListenRequest extends messages.SubscriptionListenRequest {}
 export class SubscriptionListenMessage extends messages.SubscriptionListenMessage {}
+export class AuthorizeRequest extends messages.AuthorizeRequest {}
+export class AuthorizeResponse extends messages.AuthorizeResponse {}

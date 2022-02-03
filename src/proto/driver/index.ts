@@ -1,5 +1,7 @@
 import * as grpc from '@grpc/grpc-js';
 import {
+  AuthorizeInput,
+  AuthorizeOutput,
   FieldResolveInput,
   FieldResolveOutput,
   InterfaceResolveTypeInput,
@@ -508,3 +510,22 @@ export const subscriptionListen = (
     },
     new Emitter(srv),
   );
+
+class SettableAuthorizeResponse extends messages.AuthorizeResponse {
+  set(v: boolean): void {
+    this.setResponse(v);
+  }
+  input(req: messages.AuthorizeRequest): AuthorizeInput {
+    return {
+      query: req.getQuery(),
+      operationName: req.getOperationname(),
+      variableValues: getRecordFromValueMap(req.getVariablevaluesMap()),
+      protocol: getProtocol(req),
+    };
+  }
+}
+
+export const authorize = (
+  req: messages.AuthorizeRequest,
+  handler: (x: AuthorizeInput) => Promise<AuthorizeOutput>,
+): Promise<messages.AuthorizeResponse> => callHandler(new SettableAuthorizeResponse(), handler, req);
