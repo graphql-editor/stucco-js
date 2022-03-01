@@ -35,8 +35,11 @@ export const builder = (yargs: Argv): Argv =>
 export function handler(args: Arguments): void {
   const maxMessageSize = toBytesSize(args.maxMessageSize);
   const enableProfiling = args.enableProfiling === true;
-  run({ maxMessageSize, enableProfiling }).catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+  const done = (e?: unknown) => {
+    if (e) console.error(e);
+    process.exit(e ? 1 : 0);
+  }
+  process.on('SIGTERM', done);
+  process.on('SIGINT', done);
+  run({ maxMessageSize, enableProfiling }).catch(done);
 }
