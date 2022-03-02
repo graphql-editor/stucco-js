@@ -292,20 +292,17 @@ export class Server {
 
   public serve(): Promise<void> {
     const { bindAddress = '0.0.0.0:1234', pluginMode = true } = this.serverOpts;
+    const start = (port: number, cb: () => void) => {
+      if (pluginMode) {
+        console.log(`1|1|tcp|127.0.0.1:${port}|grpc`);
+      }
+      this.start();
+      cb();
+    };
     const creds: grpc.ServerCredentials = this.credentials(pluginMode);
-    return new Promise((resolve, reject) => {
-      this.server.bindAsync(bindAddress, creds, (err, port) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        if (pluginMode) {
-          console.log(`1|1|tcp|127.0.0.1:${port}|grpc`);
-        }
-        this.start();
-        resolve();
-      });
-    });
+    return new Promise((resolve, reject) =>
+      this.server.bindAsync(bindAddress, creds, (err, port) => (err ? reject(err) : start(port, resolve))),
+    );
   }
 
   public stop(): Promise<void> {

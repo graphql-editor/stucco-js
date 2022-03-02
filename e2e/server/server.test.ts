@@ -2,7 +2,6 @@ import { spawn, ChildProcess, execSync } from 'child_process';
 import fetch from 'node-fetch';
 import { AbortController as NodeAbortController } from 'node-abort-controller';
 import { join, delimiter } from 'path';
-import { SIGINT } from 'constants';
 
 const node = process.platform === 'win32' ? 'node.exe' : 'node';
 const pathKey = process.platform === 'win32' ? 'Path' : 'PATH';
@@ -23,8 +22,51 @@ const retry = <T>(fn: () => Promise<T>, retries: number, timeout: number): Promi
       )
     : fn();
 
+const kill = (proc: ChildProcess) =>
+  process.platform === 'win32' ? execSync('taskkill /pid ' + proc.pid + ' /T /F') : proc.kill();
+
+const waitKill = async (proc?: ChildProcess) =>
+  proc &&
+  new Promise<void>((resolve) => {
+    proc.once('exit', resolve);
+    kill(proc);
+  });
+
+const waitSpawn = (proc: ChildProcess) =>
+  new Promise<void>((resolve, reject) => {
+    proc.once('error', reject);
+    proc.once('spawn', () => {
+      proc.off('error', reject);
+      resolve();
+    });
+  });
+
+const ver = parseInt(process.versions.node.split('.')[0]);
+const AbortControllerImpl = ver < 16 ? NodeAbortController : AbortController;
+
+const query = (body: Record<string, unknown>, signal?: AbortSignal) =>
+  fetch('http://localhost:8080/graphql', {
+    body: JSON.stringify(body),
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    signal,
+  }).then((res) => (res.status === 200 ? res.json() : Promise.reject('not 200')));
+
+const ping = async () => {
+  const controller = new AbortControllerImpl();
+  const id = setTimeout(() => controller.abort(), 1000);
+  const signal = controller.signal;
+  const resp = await query({ query: '{ hero(name: "Batman") { name sidekick { name } } }' }, signal);
+  clearTimeout(id);
+  return resp;
+};
+
+const waitPing = () => retry(ping, 5, 2000);
+
 describe('test plugin integration', () => {
-  let stuccoProccess: ChildProcess;
+  let stuccoProccess: ChildProcess | undefined;
   beforeAll(async () => {
     // Use run.js directly to make sure process is terminated on windows
     const cwd = join(process.cwd(), 'e2e', 'server', 'testdata');
@@ -34,47 +76,19 @@ describe('test plugin integration', () => {
     stuccoProccess = spawn(node, [join('..', '..', '..', 'lib', 'stucco', 'run.js'), 'local', 'start', '-v', '5'], {
       cwd,
       env,
-      stdio: 'inherit',
+      stdio: 'ignore',
     });
-    await retry(
-      async () => {
-        const ver = parseInt(process.versions.node.split('.')[0]);
-        const controller = ver < 16 ? new NodeAbortController() : new AbortController();
-        const id = setTimeout(() => controller.abort(), 1000);
-        const signal = controller.signal;
-        const resp = await fetch('http://localhost:8080/graphql', {
-          method: 'OPTIONS',
-          signal,
-        });
-        clearTimeout(id);
-        return resp;
-      },
-      5,
-      2000,
-    );
+    const proc = stuccoProccess;
+    await waitSpawn(proc);
+    await waitPing();
   }, 30000);
   afterAll(async () => {
-    if (!stuccoProccess) {
-      return;
-    }
-    if (process.platform === 'win32') {
-      execSync('taskkill /pid ' + stuccoProccess.pid + ' /T /F');
-    } else {
-      stuccoProccess.kill(SIGINT);
-    }
-  });
+    const proc = stuccoProccess;
+    stuccoProccess = undefined;
+    await waitKill(proc);
+  }, 30000);
   it('returns hero', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ hero(name: "Batman") { name sidekick { name } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ hero(name: "Batman") { name sidekick { name } } }' })).resolves.toEqual({
       data: {
         hero: {
           name: 'Batman',
@@ -86,17 +100,7 @@ describe('test plugin integration', () => {
     });
   });
   it('returns sidekick', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ sidekick(name: "Robin") { name hero { name } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ sidekick(name: "Robin") { name hero { name } } }' })).resolves.toEqual({
       data: {
         sidekick: {
           name: 'Robin',
@@ -108,17 +112,7 @@ describe('test plugin integration', () => {
     });
   });
   it('finds hero', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ search(name: "Batman") { ... on Hero { name } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ search(name: "Batman") { ... on Hero { name } } }' })).resolves.toEqual({
       data: {
         search: {
           name: 'Batman',
@@ -127,17 +121,7 @@ describe('test plugin integration', () => {
     });
   });
   it('finds sidekick', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ search(name: "Robin") { ... on Sidekick { name } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ search(name: "Robin") { ... on Sidekick { name } } }' })).resolves.toEqual({
       data: {
         search: {
           name: 'Robin',
@@ -146,17 +130,7 @@ describe('test plugin integration', () => {
     });
   });
   it('finds vilian', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ search(name: "Joker") { ... on Vilian { name } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ search(name: "Joker") { ... on Vilian { name } } }' })).resolves.toEqual({
       data: {
         search: {
           name: 'Joker',
@@ -166,16 +140,10 @@ describe('test plugin integration', () => {
   });
   it('battles', async () => {
     await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query:
-            '{ battles { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
+      query({
+        query:
+          '{ battles { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
+      }),
     ).resolves.toEqual({
       data: {
         battles: [
@@ -213,18 +181,12 @@ describe('test plugin integration', () => {
   });
   it('findBattles', async () => {
     await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query:
-            '{ findBattles(when: "' +
-            new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString() +
-            '") { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
+      query({
+        query:
+          '{ findBattles(when: "' +
+          new Date(2020, 1, 1, 0, 1, 0, 0).toUTCString() +
+          '") { participants { members { name ... on Hero { sidekick { name } } ... on Sidekick { hero { name } } } } when } }',
+      }),
     ).resolves.toEqual({
       data: {
         findBattles: [
@@ -262,16 +224,10 @@ describe('test plugin integration', () => {
   });
   it('search batman', async () => {
     await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query:
-            '{ search(name: "Batman") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
+      query({
+        query:
+          '{ search(name: "Batman") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
+      }),
     ).resolves.toEqual({
       data: {
         search: {
@@ -285,16 +241,10 @@ describe('test plugin integration', () => {
   });
   it('search robin', async () => {
     await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query:
-            '{ search(name: "Robin") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
+      query({
+        query:
+          '{ search(name: "Robin") { ... on Hero { name sidekick { name } } ... on Sidekick { name hero { name } } } }',
+      }),
     ).resolves.toEqual({
       data: {
         search: {
@@ -307,17 +257,7 @@ describe('test plugin integration', () => {
     });
   });
   it('check if secret set', async () => {
-    await expect(
-      fetch('http://localhost:8080/graphql', {
-        body: JSON.stringify({
-          query: '{ getSecretKey }',
-        }),
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-      }).then((res) => res.json()),
-    ).resolves.toEqual({
+    await expect(query({ query: '{ getSecretKey }' })).resolves.toEqual({
       data: {
         getSecretKey: 'VALUE',
       },

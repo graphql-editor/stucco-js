@@ -39,7 +39,7 @@ export function handler(args: Arguments): void {
     if (e) console.error(e);
     process.exit(e ? 1 : 0);
   };
-  process.on('SIGTERM', done);
-  process.on('SIGINT', done);
+  process.once('SIGTERM', () => done());
+  process.once('SIGINT', () => done());
   run({ maxMessageSize, enableProfiling }).catch(done);
 }
