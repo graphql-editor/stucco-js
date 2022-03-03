@@ -17,6 +17,9 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
+    - name: disable firewall
+      if: ${{ matrix.platform == 'windows-latest' }}
+      run: netsh advfirewall set allprofiles state off
     - name: setup node
       uses: actions/setup-node@v1
       with:
