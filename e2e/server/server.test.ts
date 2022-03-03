@@ -32,7 +32,8 @@ const waitKill = async (proc?: ChildProcess) =>
     kill(proc);
   });
 
-const waitSpawn = (proc: ChildProcess) =>
+const waitSpawn = async (proc: ChildProcess) =>
+  ver >= 14 &&
   new Promise<void>((resolve, reject) => {
     proc.once('error', reject);
     proc.once('spawn', () => {
