@@ -1,5 +1,5 @@
-const fetch=require('node-fetch');
-const fs=require('fs');
+import fetch from 'node-fetch';
+import fs from 'fs';
 fetch(
   "https://stucco-release.fra1.cdn.digitaloceanspaces.com/latest/version"
 )
