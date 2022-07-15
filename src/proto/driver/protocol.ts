@@ -4,7 +4,10 @@ import * as messages from './messages.js';
 
 type Headers = Record<string, string[]>;
 
-const newOptionalCheck = <T>(check: (v: unknown) => v is T) => (v: unknown | undefined | null): v is T | undefined | null => v === undefined || v === null || check(v);
+const newOptionalCheck =
+  <T>(check: (v: unknown) => v is T) =>
+  (v: unknown | undefined | null): v is T | undefined | null =>
+    v === undefined || v === null || check(v);
 
 const checkOptionalUint8Array = newOptionalCheck((v: unknown): v is Uint8Array => v instanceof Uint8Array);
 const checkOptionalString = newOptionalCheck((v: unknown): v is string => typeof v === 'string');
@@ -26,11 +29,11 @@ function isHttpRequestURL(url: unknown): url is HttpRequestURL {
   if (typeof url !== 'object') {
     return false;
   }
-  const { host, path, query } = (url as {
+  const { host, path, query } = url as {
     host?: unknown;
     path?: unknown;
     query?: unknown;
-  });
+  };
   return checkOptionalString(host) && checkOptionalString(path) && checkOptionalString(query);
 }
 
@@ -43,15 +46,7 @@ function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
   if (!('headers' in protocol)) {
     return false;
   }
-  const {
-    headers,
-    body,
-    host,
-    method,
-    proto,
-    remoteAddress,
-    url,
-  } = (protocol as {
+  const { headers, body, host, method, proto, remoteAddress, url } = protocol as {
     headers?: unknown;
     body?: unknown;
     host?: unknown;
@@ -59,18 +54,20 @@ function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
     proto?: unknown;
     remoteAddress?: unknown;
     url?: unknown;
-  });
+  };
   // If none of the properties are present, return false
   if (!headers && !body && !host && !method && !proto && !remoteAddress && !url) {
     return false;
   }
-  return checkOptionalUint8Array(body) ||
+  return (
+    checkOptionalUint8Array(body) ||
     checkOptionalString(host) ||
     checkOptionalString(method) ||
     checkOptionalString(proto) ||
     checkOptionalString(remoteAddress) ||
     checkOptionalHttpRequestURL(url) ||
-    checkOptionalHeaders(headers);
+    checkOptionalHeaders(headers)
+  );
 }
 
 interface WithProtocol {
