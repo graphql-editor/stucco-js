@@ -71,8 +71,20 @@ export interface OperationDefinition {
   selectionSet?: Selections;
 }
 
+export interface HttpRequestURL {
+  host?: string;
+  path?: string;
+  query?: string;
+}
+
 export interface HttpRequest {
+  body?: Uint8Array;
   headers?: Record<string, string[]>;
+  host?: string;
+  method?: string;
+  proto?: string;
+  remoteAddress?: string;
+  url?: HttpRequestURL;
 }
 
 export type Protocol = HttpRequest;
