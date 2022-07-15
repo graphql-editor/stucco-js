@@ -1,5 +1,6 @@
 import { spawn, ChildProcess, execSync } from 'child_process';
 import fetch from 'node-fetch';
+import type { AbortSignal as NodeFetchAbortSignal } from 'node-fetch/externals';
 import { AbortController as NodeAbortController } from 'node-abort-controller';
 import { join, delimiter } from 'path';
 import { SIGINT } from 'constants';
@@ -41,7 +42,7 @@ describe('test plugin integration', () => {
         const ver = parseInt(process.versions.node.split('.')[0]);
         const controller = ver < 16 ? new NodeAbortController() : new AbortController();
         const id = setTimeout(() => controller.abort(), 1000);
-        const signal = controller.signal;
+        const signal = controller.signal as NodeFetchAbortSignal;
         const resp = await fetch('http://localhost:8080/graphql', {
           method: 'OPTIONS',
           signal,
