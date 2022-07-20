@@ -46,7 +46,7 @@ const waitSpawn = async (proc: ChildProcess) =>
 const ver = parseInt(process.versions.node.split('.')[0]);
 const AbortControllerImpl = ver < 16 ? NodeAbortController : AbortController;
 
-const query = (body: Record<string, unknown>, signal?: AbortSignal) =>
+const query = (body: Record<string, unknown>, signal?: NodeFetchAbortSignal) =>
   fetch('http://localhost:8080/graphql', {
     body: JSON.stringify(body),
     method: 'POST',
@@ -60,7 +60,7 @@ const ping = async () => {
   const controller = new AbortControllerImpl();
   const id = setTimeout(() => controller.abort(), 1000);
   const signal = controller.signal;
-  const resp = await query({ query: '{ hero(name: "Batman") { name sidekick { name } } }' }, signal);
+  const resp = await query({ query: '{ hero(name: "Batman") { name sidekick { name } } }' }, signal as NodeFetchAbortSignal);
   clearTimeout(id);
   return resp;
 };
@@ -80,22 +80,9 @@ describe('test plugin integration', () => {
       env,
       stdio: 'ignore',
     });
-    await retry(
-      async () => {
-        const ver = parseInt(process.versions.node.split('.')[0]);
-        const controller = ver < 16 ? new NodeAbortController() : new AbortController();
-        const id = setTimeout(() => controller.abort(), 1000);
-        const signal = controller.signal as NodeFetchAbortSignal;
-        const resp = await fetch('http://localhost:8080/graphql', {
-          method: 'OPTIONS',
-          signal,
-        });
-        clearTimeout(id);
-        return resp;
-      },
-      5,
-      2000,
-    );
+    const proc = stuccoProccess;
+    await waitSpawn(proc);
+    await waitPing();
   }, 30000);
   afterAll(async () => {
     const proc = stuccoProccess;
