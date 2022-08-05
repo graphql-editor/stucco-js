@@ -7,7 +7,8 @@
   "bin": {
     "stucco-js": "lib/cli/cli.js",
     "stucco-js.cmd": "lib/cli/cli.cmd",
-    "stucco": "lib/stucco/cmd.js"
+    "stucco": "lib/stucco/cmd.js",
+    "stucco.cmd": "lib/stucco/cmd.cmd"
   },
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -c jest.config.cjs",

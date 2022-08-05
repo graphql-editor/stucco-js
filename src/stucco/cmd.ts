@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { stucco } from './run.js';
 import { spawn } from 'child_process';
 (async (): Promise<void> => {
