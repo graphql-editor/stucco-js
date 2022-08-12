@@ -16,7 +16,7 @@
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"*.js\"",
     "bump-stucco": "node scripts/bump_stucco.js",
     "clean": "rimraf lib/",
-    "copyfiles": "copyfiles -u 1 src/cli/cli.cmd lib/",
+    "copyfiles": "copyfiles -u 1 src/cli/cli.cmd src/stucco/cmd.cmd  lib/",
     "build": "npm run clean && tsc && npm run copyfiles"
   },
   "license": "MIT",
