@@ -38,7 +38,7 @@ const fetchBin = async () => {
   });
   const { statusCode = 0 } = res;
   if (statusCode < 200 || statusCode > 299) {
-    throw new Error("Did not recieve 200 class respopnse")
+    throw new Error('Did not recieve 200 class respopnse');
   }
   await mkdir(dirname(filename), { recursive: true });
   await new Promise((resolve, reject) => {
@@ -48,16 +48,16 @@ const fetchBin = async () => {
     bin.on('open', () => {
       res.pipe(bin);
       res.on('error', (e) => {
-        reject(e)
+        reject(e);
         bin.close();
       });
-      res.on('end', () => bin.close())
+      res.on('end', () => bin.close());
     });
   });
   if (platform() != 'win32') {
-    await chmod(filename, "700");
+    await chmod(filename, '700');
   }
-}
+};
 
 async function fetchCheckBin() {
   try {
@@ -69,7 +69,6 @@ async function fetchCheckBin() {
     });
   }
   await binVersionCheck(filename, `~${version}`, { args: ['version'] });
-
 }
 
 async function tryRemove(e: unknown): Promise<void> {
