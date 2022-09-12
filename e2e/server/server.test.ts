@@ -1,7 +1,5 @@
 import { spawn, ChildProcess } from 'child_process';
 import fetch from 'node-fetch';
-import type { AbortSignal as NodeFetchAbortSignal } from 'node-fetch/externals';
-import { AbortController as NodeAbortController } from 'node-abort-controller';
 import { join, delimiter } from 'path';
 
 const node = process.platform === 'win32' ? 'node.exe' : 'node';
@@ -30,6 +28,8 @@ const waitKill = async (proc?: ChildProcess) =>
     proc.kill();
   });
 
+const ver = parseInt(process.versions.node.split('.')[0]);
+
 const waitSpawn = async (proc: ChildProcess) =>
   ver >= 14 &&
   new Promise<void>((resolve, reject) => {
@@ -40,10 +40,7 @@ const waitSpawn = async (proc: ChildProcess) =>
     });
   });
 
-const ver = parseInt(process.versions.node.split('.')[0]);
-const AbortControllerImpl = ver < 16 ? NodeAbortController : AbortController;
-
-const query = (body: Record<string, unknown>, signal?: NodeFetchAbortSignal) =>
+const query = (body: Record<string, unknown>, signal?: AbortSignal) =>
   fetch('http://localhost:8080/graphql', {
     body: JSON.stringify(body),
     method: 'POST',
@@ -54,12 +51,12 @@ const query = (body: Record<string, unknown>, signal?: NodeFetchAbortSignal) =>
   }).then((res) => (res.status === 200 ? res.json() : Promise.reject('not 200')));
 
 const ping = async () => {
-  const controller = new AbortControllerImpl();
+  const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 1000);
   const signal = controller.signal;
   const resp = await query(
     { query: '{ hero(name: "Batman") { name sidekick { name } } }' },
-    signal as NodeFetchAbortSignal,
+    signal,
   );
   clearTimeout(id);
   return resp;
