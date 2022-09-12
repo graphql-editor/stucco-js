@@ -19,12 +19,17 @@ const src = () => {
   const src: Partial<Record<NodeJS.Platform, Record<string, string>>> = {
     darwin: {
       x64: `${base}/darwin/amd64/stucco`,
+      arm64: `${base}/darwin/arm64/stucco`,
     },
     linux: {
+      x32: `${base}/linux/386/stucco`,
       x64: `${base}/linux/amd64/stucco`,
+      arm64: `${base}/linux/arm64/stucco`,
     },
     win32: {
+      x32: `${base}/windows/386/stucco`,
       x64: `${base}/windows/amd64/stucco`,
+      arm64: `${base}/windows/arm64/stucco`,
     },
   };
   const plat = src[platform()] || {};
