@@ -27,9 +27,9 @@ const src = () => {
       arm64: `${base}/linux/arm64/stucco`,
     },
     win32: {
-      x32: `${base}/windows/386/stucco`,
-      x64: `${base}/windows/amd64/stucco`,
-      arm64: `${base}/windows/arm64/stucco`,
+      x32: `${base}/windows/386/stucco.exe`,
+      x64: `${base}/windows/amd64/stucco.exe`,
+      arm64: `${base}/windows/arm64/stucco.exe`,
     },
   };
   const plat = src[platform()] || {};
