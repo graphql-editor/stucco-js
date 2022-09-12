@@ -54,10 +54,7 @@ const ping = async () => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 1000);
   const signal = controller.signal;
-  const resp = await query(
-    { query: '{ hero(name: "Batman") { name sidekick { name } } }' },
-    signal,
-  );
+  const resp = await query({ query: '{ hero(name: "Batman") { name sidekick { name } } }' }, signal);
   clearTimeout(id);
   return resp;
 };
