@@ -1,6 +1,6 @@
 {
   "name": "stucco-js",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "type": "module",
