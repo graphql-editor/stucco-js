@@ -78,7 +78,7 @@ export interface HttpRequestURL {
 }
 
 export interface HttpRequest {
-  body?: ArrayBuffer;
+  body?: Buffer;
   headers?: Record<string, string[]>;
   host?: string;
   method?: string;

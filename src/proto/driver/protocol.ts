@@ -82,7 +82,7 @@ export function getProtocol(req: WithProtocol): HttpRequest | undefined {
     const { body, ...rest } = protocol;
     return {
       ...rest,
-      ...(body && { body: Buffer.from(body, 'base64').buffer }),
+      ...(body && { body: Buffer.from(body, 'base64') }),
     };
   }
 }
