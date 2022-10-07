@@ -9,7 +9,6 @@ const newOptionalCheck =
   (v: unknown | undefined | null): v is T | undefined | null =>
     v === undefined || v === null || check(v);
 
-const checkOptionalUint8Array = newOptionalCheck((v: unknown): v is Uint8Array => v instanceof Uint8Array);
 const checkOptionalString = newOptionalCheck((v: unknown): v is string => typeof v === 'string');
 const checkOptionalHeaders = newOptionalCheck((v: unknown): v is Headers => {
   if (typeof v !== 'object' || v === null) return false;
@@ -39,7 +38,7 @@ function isHttpRequestURL(url: unknown): url is HttpRequestURL {
 
 const checkOptionalHttpRequestURL = newOptionalCheck((v: unknown): v is HttpRequestURL => isHttpRequestURL(v));
 
-function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
+function isHttpRequestProtocol(protocol: unknown): protocol is Omit<HttpRequest, 'body'> & { body?: string } {
   if (typeof protocol !== 'object' || protocol === null) {
     return false;
   }
@@ -60,7 +59,7 @@ function isHttpRequestProtocol(protocol: unknown): protocol is HttpRequest {
     return false;
   }
   return (
-    checkOptionalUint8Array(body) ||
+    checkOptionalString(body) ||
     checkOptionalString(host) ||
     checkOptionalString(method) ||
     checkOptionalString(proto) ||
@@ -79,5 +78,11 @@ export function getProtocol(req: WithProtocol): HttpRequest | undefined {
     return undefined;
   }
   const protocol = getFromValue(req.getProtocol());
-  return isHttpRequestProtocol(protocol) ? protocol : undefined;
+  if (isHttpRequestProtocol(protocol)) {
+    const { body, ...rest } = protocol
+    return {
+      ...rest,
+      ...(body && { body: Buffer.from(body, 'base64' ).buffer }),
+    }
+  }
 }
