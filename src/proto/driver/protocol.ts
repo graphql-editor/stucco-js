@@ -34,7 +34,9 @@ function isHttpRequestURL(url: unknown): url is HttpRequestURL {
     path?: unknown;
     query?: unknown;
   };
-  return checkOptionalString(host) && checkOptionalString(path) && checkOptionalString(query) && checkOptionalString(scheme);
+  return (
+    checkOptionalString(host) && checkOptionalString(path) && checkOptionalString(query) && checkOptionalString(scheme)
+  );
 }
 
 const checkOptionalHttpRequestURL = newOptionalCheck((v: unknown): v is HttpRequestURL => isHttpRequestURL(v));
