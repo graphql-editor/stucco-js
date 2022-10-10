@@ -28,12 +28,13 @@ function isHttpRequestURL(url: unknown): url is HttpRequestURL {
   if (typeof url !== 'object') {
     return false;
   }
-  const { host, path, query } = url as {
+  const { host, path, query, scheme } = url as {
+    scheme?: unknown;
     host?: unknown;
     path?: unknown;
     query?: unknown;
   };
-  return checkOptionalString(host) && checkOptionalString(path) && checkOptionalString(query);
+  return checkOptionalString(host) && checkOptionalString(path) && checkOptionalString(query) && checkOptionalString(scheme);
 }
 
 const checkOptionalHttpRequestURL = newOptionalCheck((v: unknown): v is HttpRequestURL => isHttpRequestURL(v));

@@ -75,6 +75,7 @@ export interface HttpRequestURL {
   host?: string;
   path?: string;
   query?: string;
+  scheme?: string;
 }
 
 export interface HttpRequest {
