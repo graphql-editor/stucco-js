@@ -11,13 +11,13 @@ async function copyDir(src: string, dest: string) {
   await mkdir(dest, { recursive: true });
   const entries = await readdir(src, { withFileTypes: true });
 
-  await Promise.all(entries.map(async (entry) => {
-    const srcPath = join(src, entry.name);
-    const destPath = join(dest, entry.name);
-    entry.isDirectory() ?
-        await copyDir(srcPath, destPath):
-        await copyFile(srcPath, destPath);
-  }));
+  await Promise.all(
+    entries.map(async (entry) => {
+      const srcPath = join(src, entry.name);
+      const destPath = join(dest, entry.name);
+      entry.isDirectory() ? await copyDir(srcPath, destPath) : await copyFile(srcPath, destPath);
+    }),
+  );
 }
 
 describe('handler', () => {
@@ -34,12 +34,12 @@ describe('handler', () => {
     const nm = join(cwd, 'tests', 'handler', 'testdata', 'node_modules');
     const testPkgs = await readdir(nm);
     await Promise.all(testPkgs.map((pkg) => copyDir(join(nm, pkg), join(cwd, 'node_modules', pkg))));
-  })
+  });
   afterAll(async () => {
     const nm = join(cwd, 'tests', 'handler', 'testdata', 'node_modules');
     const testPkgs = await readdir(nm);
     await Promise.all(testPkgs.map((pkg) => rm(join(cwd, 'node_modules', pkg), { recursive: true })));
-  })
+  });
   beforeEach(() => {
     process.chdir(join(cwd, 'tests', 'handler', 'testdata'));
   });
@@ -79,7 +79,9 @@ describe('handler', () => {
     expect(v).resolves.toEqual(1);
   });
   it('imports es dict named function', async () => {
-    const v = ((await getHandler(mockWithFunction('esm_dict_named@firstName.secondName.fnname'))) as (arg: unknown) => unknown)(1);
+    const v = (
+      (await getHandler(mockWithFunction('esm_dict_named@firstName.secondName.fnname'))) as (arg: unknown) => unknown
+    )(1);
     expect(v).resolves.toEqual(1);
   });
   it('imports externaltesthandleresm module', async () => {

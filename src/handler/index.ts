@@ -11,7 +11,7 @@ export interface WithFunction {
 function handlerFunc<T, U, V>(name: string, mod: { [k: string]: unknown }): (x: T, y?: V) => Promise<U> | U {
   let path = name.split('.').filter((v) => v);
   let v = path.reduce(
-    (pv: Record<string, unknown> | undefined, cv: string) => pv && pv[cv] as Record<string, unknown> | undefined,
+    (pv: Record<string, unknown> | undefined, cv: string) => pv && (pv[cv] as Record<string, unknown> | undefined),
     mod,
   );
   if (!path.length || !v) {
@@ -25,7 +25,7 @@ function handlerFunc<T, U, V>(name: string, mod: { [k: string]: unknown }): (x: 
       path = ['handler'];
     }
     v = path.reduce(
-      (pv: Record<string, unknown> | undefined, cv: string) => pv && pv[cv] as Record<string, unknown> | undefined,
+      (pv: Record<string, unknown> | undefined, cv: string) => pv && (pv[cv] as Record<string, unknown> | undefined),
       mod,
     );
   }
@@ -62,17 +62,8 @@ async function findExt(fnName: string): Promise<string> {
   return findExtFrom(fnName, ['.js', '.cjs', '.mjs']);
 }
 
-const splitRefWithImport = (v: string) => v.split('@').reduce(
-    (pv, cv) => pv[0]
-      ? [
-        pv[0],
-        pv[1]
-          ? [pv[1], cv].join('@')
-          : cv,
-      ]
-      : [cv, ''],
-    ['', ''],
-  );
+const splitRefWithImport = (v: string) =>
+  v.split('@').reduce((pv, cv) => (pv[0] ? [pv[0], pv[1] ? [pv[1], cv].join('@') : cv] : [cv, '']), ['', '']);
 
 async function loadLocal<T, U, V = undefined>(fnName: string): Promise<(arg1: T, arg2?: V) => Promise<U>> {
   const [importName, name] = splitRefWithImport(fnName);
@@ -105,11 +96,11 @@ async function findNodeModules(target: string, at: string = process.cwd()): Prom
 
 async function loadModule<T, U, V = undefined>(modName: string): Promise<(arg1: T, arg2?: V) => Promise<U>> {
   const [importName, name] = splitRefWithImport(modName);
-  modName = importName
+  modName = importName;
   const [importPath, fName] = modName.split('.');
   await findNodeModules(importPath);
   const mod = await import(importPath);
-  const handler = handlerFunc<T, U, V>(name || fName && fName.slice(1) || '', mod);
+  const handler = handlerFunc<T, U, V>(name || (fName && fName.slice(1)) || '', mod);
   const wrapHandler = (x: T, y?: V): Promise<U> => Promise.resolve(handler(x, y));
   cache[modName] = wrapHandler as (arg1: unknown, arg2?: unknown) => unknown;
   return wrapHandler;
@@ -123,7 +114,7 @@ export async function getHandler<T, U, V = undefined>(req: WithFunction): Promis
   if (typeof fn === 'undefined' || !fn.getName()) {
     throw new Error(`function name is empty`);
   }
-  const fnName = fn.getName()
+  const fnName = fn.getName();
   const cached = cachedFunc<T, U, V>(`file:///${resolve(fnName)}`) || cachedFunc<T, U, V>(fnName);
   if (cached) {
     return cached;
@@ -131,8 +122,8 @@ export async function getHandler<T, U, V = undefined>(req: WithFunction): Promis
   try {
     const handler = await loadLocal<T, U, V>(fnName);
     return handler;
-  } catch(e) {
-    const handler = await loadModule<T, U, V>(fnName).catch(() => {});
+  } catch (e) {
+    const handler = await loadModule<T, U, V>(fnName).catch(console.error);
     if (!handler) {
       throw e;
     }
