@@ -12,16 +12,16 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - name: setup node
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node }}
     - name: checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
     - name: Get npm cache directory
       id: npm-cache
       run: |
         echo "::set-output name=dir::$(npm config get cache)"
-    - uses: actions/cache@v1
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.npm-cache.outputs.dir }}
         key: ${{ matrix.platform }}-node-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}
@@ -49,17 +49,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: setup node
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: 16
         registry-url: 'https://registry.npmjs.org'
     - name: checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v3
     - name: Get npm cache directory
       id: npm-cache
       run: |
         echo "::set-output name=dir::$(npm config get cache)"
-    - uses: actions/cache@v1
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.npm-cache.outputs.dir }}
         key: ${{ matrix.platform }}-node-${{ matrix.node }}-${{ hashFiles('package-lock.json') }}
