@@ -22,7 +22,7 @@ import {
   SetSecretsInput,
   SetSecretsOutput,
 } from '../../../src/api/index.js';
-import { nilValue, stringValue, intValue, arrValue, objValue, variableValue } from './helpers.js';
+const { nilValue, stringValue, intValue, arrValue, objValue, variableValue } = messages;
 
 const expectedSelections = [
   {
@@ -328,8 +328,7 @@ describe('protocol buffer-javascript bridge', () => {
       expect(response).toMatchObject(expectedResposne);
     });
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.FieldResolveRequest();
       request.setInfo(new messages.FieldResolveInfo());
       const response = await fieldResolve(request, asHandler(handler));
@@ -410,8 +409,7 @@ describe('protocol buffer-javascript bridge', () => {
       expect(response).toMatchObject(expectedResposne);
     });
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.InterfaceResolveTypeRequest();
       request.setInfo(new messages.InterfaceResolveTypeInfo());
       const response = await interfaceResolveType(request, asHandler(handler));
@@ -485,8 +483,7 @@ describe('protocol buffer-javascript bridge', () => {
     type HandlerType = (x: SetSecretsInput) => Promise<SetSecretsOutput>;
     const asHandler = (v: unknown) => v as HandlerType;
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.SetSecretsRequest();
       const response = await setSecrets(request, asHandler(handler));
       const expectedResposne = new messages.SetSecretsResponse();
@@ -518,8 +515,7 @@ describe('protocol buffer-javascript bridge', () => {
     type HandlerType = (x: ScalarParseInput) => Promise<unknown>;
     const asHandler = (v: unknown) => v as HandlerType;
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.ScalarParseRequest();
       const response = await scalarParse(request, asHandler(handler));
       const expectedResposne = new messages.ScalarParseResponse();
@@ -581,8 +577,7 @@ describe('protocol buffer-javascript bridge', () => {
     type HandlerType = (x: ScalarSerializeInput) => Promise<unknown>;
     const asHandler = (v: unknown) => v as HandlerType;
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.ScalarSerializeRequest();
       const response = await scalarSerialize(request, asHandler(handler));
       const expectedResposne = new messages.ScalarSerializeResponse();
@@ -653,8 +648,7 @@ describe('protocol buffer-javascript bridge', () => {
       expect(response).toMatchObject(expectedResposne);
     });
     it('handles error', async () => {
-      const handler = jest.fn();
-      handler.mockRejectedValue(new Error('mocked error'));
+      const handler = jest.fn(() => Promise.reject(new Error('mocked error')));
       const request = new messages.UnionResolveTypeRequest();
       request.setInfo(new messages.UnionResolveTypeInfo());
       const response = await unionResolveType(request, asHandler(handler));

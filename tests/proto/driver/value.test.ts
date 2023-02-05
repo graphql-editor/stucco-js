@@ -1,5 +1,6 @@
 import * as value from '../../../src/proto/driver/value.js';
-import {
+import * as messages from '../../../src/proto/driver/messages.js';
+const {
   nilValue,
   anyValue,
   arrValue,
@@ -10,8 +11,7 @@ import {
   booleanValue,
   objValue,
   variableValue,
-} from './helpers.js';
-import * as messages from '../../../src/proto/driver/messages.js';
+} = messages;
 
 describe('value marshaling/unmarshaling', () => {
   it('marshals undefined and null', () => {
