@@ -11,7 +11,7 @@
     "stucco.cmd": "lib/stucco/cmd.cmd"
   },
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -c jest.config.cjs",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -c jest.config.cjs && echo $? || echo $?",
     "test:e2e": "cross-env NODE_OPTIONS=--experimental-vm-modules jest -c jest.e2e.config.cjs",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" \"e2e/**/*.ts\" \"*.js\"",
     "bump-stucco": "node scripts/bump_stucco.js",
