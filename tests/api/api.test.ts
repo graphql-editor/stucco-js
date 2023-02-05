@@ -12,7 +12,7 @@ describe('handler assertion', () => {
     expect(isNonNullTypeRef({ nonNull: { name: 'name' } })).toBeTruthy();
   });
   it('is list type', () => {
-    expect(isListTypeRef({ name: 'name' })).toBeTruthy();
+    expect(isListTypeRef({ name: 'name' })).toBeFalsy();
     expect(isListTypeRef({ list: { name: 'name' } })).toBeTruthy();
     expect(isListTypeRef({ nonNull: { name: 'name' } })).toBeFalsy();
   });
