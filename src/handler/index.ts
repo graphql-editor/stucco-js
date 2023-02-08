@@ -29,6 +29,9 @@ function handlerFunc<T, U, V>(name: string, mod: { [k: string]: unknown }): (x: 
       mod,
     );
   }
+  if (v && 'handler' in v && typeof v.handler === 'function') {
+    return v.handler as (x: T, y?: V) => Promise<U> | U;
+  }
   if (!path.length || typeof v !== 'function') {
     throw new TypeError('invalid handler module');
   }
