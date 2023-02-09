@@ -1,4 +1,4 @@
-![](stucco.jpg)
+![image](https://user-images.githubusercontent.com/779748/217842393-67c3d172-8039-490d-b315-e208a68f89ae.png)
 
 # Javascript runtime for Stucco
 ![Build](https://github.com/graphql-editor/stucco-js/workflows/build/badge.svg)
