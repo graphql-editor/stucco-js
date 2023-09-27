@@ -292,7 +292,7 @@ export class Server {
   }
 
   public serve(): Promise<void> {
-    const { bindAddress = '0.0.0.0:1234', pluginMode = true } = this.serverOpts;
+    const { bindAddress = '0.0.0.0:0', pluginMode = true } = this.serverOpts;
     const creds: grpc.ServerCredentials = this.credentials(pluginMode);
     return new Promise((resolve, reject) => {
       this.server.bindAsync(bindAddress, creds, (err, port) => {
